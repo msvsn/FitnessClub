@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using FitnessClub.BLL.Dtos;
+using FitnessClub.BLL.Helpers;
 using FitnessClub.BLL.Interfaces;
-using FitnessClub.DAL;
+using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,7 @@ namespace FitnessClub.BLL.Services
         UserOrGuestRequired,
         BookingLimitExceeded,
         MembershipRequired,
+        StrategyNotFound,
         UnknownError
     }
 
@@ -30,14 +32,18 @@ namespace FitnessClub.BLL.Services
         private readonly IUserService _userService;
         private readonly IEnumerable<IBookingStrategy> _strategies;
         private readonly ILogger<BookingService> _logger;
+        private readonly IRepository<ClassSchedule> _scheduleRepository;
+        private readonly IRepository<Booking> _bookingRepository;
 
         public BookingService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService, IEnumerable<IBookingStrategy> strategies, ILogger<BookingService> logger)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _userService = userService;
-            _strategies = strategies;
-            _logger = logger;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            _strategies = strategies ?? throw new ArgumentNullException(nameof(strategies));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _scheduleRepository = _unitOfWork.GetRepository<ClassSchedule>();
+            _bookingRepository = _unitOfWork.GetRepository<Booking>();
         }
 
         public async Task<(BookingResult Result, string? BookingId)> BookClassAsync(int? userId, string? guestName, int classScheduleId, DateTime classDate)
@@ -52,13 +58,15 @@ namespace FitnessClub.BLL.Services
             }
             if (userId.HasValue && !string.IsNullOrWhiteSpace(guestName))
             {
-                _logger.LogWarning("Booking failed: Both User ID and Guest Name provided.");
+                _logger.LogWarning("Booking failed: Both User ID and Guest Name provided, ignoring guest name.");
                 guestName = null;
             }
 
-            var classSchedule = await _unitOfWork.ClassSchedules.Query()
-                .Include(cs => cs.Club)
-                .FirstOrDefaultAsync(cs => cs.ClassScheduleId == classScheduleId);
+            var schedules = await _scheduleRepository.FindAsync(
+                cs => cs.ClassScheduleId == classScheduleId,
+                cs => cs.Club
+            );
+            var classSchedule = schedules.FirstOrDefault();
 
             if (classSchedule == null)
             {
@@ -66,24 +74,26 @@ namespace FitnessClub.BLL.Services
                 return (BookingResult.InvalidScheduleOrDate, null);
             }
 
-            if (classDate.DayOfWeek != classSchedule.DayOfWeek || classDate.Date < DateTime.Today)
+            var classDateOnly = classDate.Date;
+            if (classDateOnly.DayOfWeek != classSchedule.DayOfWeek || classDateOnly < DateTime.Today)
             {
                 _logger.LogWarning("Booking failed: Invalid date {ClassDate} for schedule {ClassScheduleId} (DayOfWeek: {ScheduleDay}, Today: {Today}).",
-                    classDate.ToString("yyyy-MM-dd"), classScheduleId, classSchedule.DayOfWeek, DateTime.Today.ToString("yyyy-MM-dd"));
+                    classDateOnly.ToString("yyyy-MM-dd"), classScheduleId, classSchedule.DayOfWeek, DateTime.Today.ToString("yyyy-MM-dd"));
                 return (BookingResult.InvalidScheduleOrDate, null);
             }
 
             int bookingWindowDays = AppSettings.BookingSettings.BookingWindowDays;
-            if (classDate.Date > DateTime.Today.AddDays(bookingWindowDays))
+            if (classDateOnly > DateTime.Today.AddDays(bookingWindowDays))
             {
                 _logger.LogWarning("Booking failed: Class date {ClassDate} is outside the booking window ({BookingWindowDays} days).",
-                    classDate.ToString("yyyy-MM-dd"), bookingWindowDays);
+                    classDateOnly.ToString("yyyy-MM-dd"), bookingWindowDays);
                 return (BookingResult.InvalidScheduleOrDate, null);
             }
 
             if (classSchedule.BookedPlaces >= classSchedule.Capacity)
             {
-                _logger.LogWarning("Booking failed: No available places for class schedule {ClassScheduleId} on {ClassDate}.", classScheduleId, classDate.ToString("yyyy-MM-dd"));
+                _logger.LogWarning("Booking failed: No available places for class schedule {ClassScheduleId} on {ClassDate}. Capacity: {Capacity}, Booked: {Booked}",
+                    classScheduleId, classDateOnly.ToString("yyyy-MM-dd"), classSchedule.Capacity, classSchedule.BookedPlaces);
                 return (BookingResult.NoAvailablePlaces, null);
             }
 
@@ -92,8 +102,8 @@ namespace FitnessClub.BLL.Services
 
             if (userId.HasValue)
             {
-                var futureBookingsCount = await _unitOfWork.Bookings.Query()
-                    .CountAsync(b => b.UserId == userId.Value && b.ClassDate.Date >= DateTime.Today);
+                var userBookings = await _bookingRepository.FindAsync(b => b.UserId == userId.Value && b.ClassDate.Date >= DateTime.Today);
+                int futureBookingsCount = userBookings.Count();
 
                 int maxBookings = AppSettings.BookingSettings.MaxBookingsPerUser;
                 if (futureBookingsCount >= maxBookings)
@@ -113,43 +123,45 @@ namespace FitnessClub.BLL.Services
             if (strategy == null)
             {
                 _logger.LogError("Booking failed: No suitable booking strategy found for User: {UserId}, Guest: {GuestName}.", userId?.ToString() ?? "N/A", guestName ?? "N/A");
-                return (BookingResult.UnknownError, null);
+                return (BookingResult.StrategyNotFound, null);
             }
 
             if (requiresMembershipCheck && userId.HasValue)
             {
-                bool hasValidMembership = await _userService.HasValidMembershipForClubAsync(userId.Value, classSchedule.ClubId, classDate);
+                bool hasValidMembership = await _userService.HasValidMembershipForClubAsync(userId.Value, classSchedule.ClubId, classDateOnly);
                 if (!hasValidMembership)
                 {
                     _logger.LogWarning("Booking failed: User {UserId} does not have a valid membership for club {ClubId} on date {ClassDate}.",
-                        userId.Value, classSchedule.ClubId, classDate.ToString("yyyy-MM-dd"));
+                        userId.Value, classSchedule.ClubId, classDateOnly.ToString("yyyy-MM-dd"));
                     return (BookingResult.MembershipRequired, null);
                 }
             }
 
             try
             {
-                var booking = strategy.CreateBooking(userId, guestName, classScheduleId, classDate);
+                var booking = strategy.CreateBooking(userId, guestName, classScheduleId, classDateOnly);
 
                 classSchedule.BookedPlaces++;
-                _unitOfWork.ClassSchedules.Update(classSchedule);
-                await _unitOfWork.Bookings.AddAsync(booking);
+                _scheduleRepository.Update(classSchedule);
+                await _bookingRepository.AddAsync(booking);
 
                 await _unitOfWork.SaveAsync();
 
                 _logger.LogInformation("Booking successful for class schedule {ClassScheduleId} on {ClassDate}. Booking ID: {BookingId}",
-                    classScheduleId, classDate.ToString("yyyy-MM-dd"), booking.BookingId);
+                    classScheduleId, classDateOnly.ToString("yyyy-MM-dd"), booking.BookingId);
 
                 return (BookingResult.Success, booking.BookingId.ToString());
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogError(ex, "Booking failed due to concurrency conflict for class schedule {ClassScheduleId} on {ClassDate}.", classScheduleId, classDate.ToString("yyyy-MM-dd"));
+                _logger.LogWarning(ex, "Booking failed due to concurrency conflict for class schedule {ClassScheduleId} on {ClassDate}. Places might be full.",
+                    classScheduleId, classDateOnly.ToString("yyyy-MM-dd"));
                 return (BookingResult.NoAvailablePlaces, null);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unexpected error occurred during booking for class schedule {ClassScheduleId} on {ClassDate}.", classScheduleId, classDate.ToString("yyyy-MM-dd"));
+                _logger.LogError(ex, "An unexpected error occurred during booking for class schedule {ClassScheduleId} on {ClassDate}.",
+                    classScheduleId, classDateOnly.ToString("yyyy-MM-dd"));
                 return (BookingResult.UnknownError, null);
             }
         }
@@ -157,16 +169,15 @@ namespace FitnessClub.BLL.Services
         public async Task<List<BookingDto>> GetUserBookingsAsync(int userId)
         {
             _logger.LogInformation("Fetching bookings for user {UserId}.", userId);
-            var bookings = await _unitOfWork.Bookings.Query()
-                .Include(b => b.ClassSchedule)
-                    .ThenInclude(cs => cs.Club)
-                .Include(b => b.ClassSchedule)
-                    .ThenInclude(cs => cs.Trainer)
-                .Where(b => b.UserId == userId)
-                .OrderByDescending(b => b.ClassDate)
-                .ToListAsync();
+            var bookings = await _bookingRepository.FindAsync(
+                b => b.UserId == userId,
+                b => b.ClassSchedule.Club,
+                b => b.ClassSchedule.Trainer
+            );
 
-            return _mapper.Map<List<BookingDto>>(bookings);
+            var sortedBookings = bookings.OrderByDescending(b => b.ClassDate);
+
+            return _mapper.Map<List<BookingDto>>(sortedBookings);
         }
     }
 }
