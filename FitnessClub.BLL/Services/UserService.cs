@@ -1,10 +1,11 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using FitnessClub.BLL.Dtos;
 using FitnessClub.DAL;
 using FitnessClub.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
 
 namespace FitnessClub.BLL.Services
 {
@@ -19,9 +20,9 @@ namespace FitnessClub.BLL.Services
             _mapper = mapper;
         }
 
-        public void Register(string firstName, string lastName, string username, string password)
+        public async Task RegisterAsync(string firstName, string lastName, string username, string password)
         {
-            if (_unitOfWork.Users.Query().Any(u => u.Username == username))
+            if (await _unitOfWork.Users.Query().AnyAsync(u => u.Username == username))
                 throw new Exception("Username already exists");
 
             var user = new User
@@ -31,19 +32,19 @@ namespace FitnessClub.BLL.Services
                 Username = username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
             };
-            _unitOfWork.Users.Add(user);
-            _unitOfWork.Save();
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.SaveAsync();
         }
 
-        public UserDto Login(string username, string password)
+        public async Task<UserDto> LoginAsync(string username, string password)
         {
-            var user = _unitOfWork.Users.Query().FirstOrDefault(u => u.Username == username);
+            var user = await _unitOfWork.Users.Query().FirstOrDefaultAsync(u => u.Username == username);
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
             return _mapper.Map<UserDto>(user);
         }
 
-        public UserDto GetUserById(int id) => _mapper.Map<UserDto>(_unitOfWork.Users.GetById(id));
+        public async Task<UserDto> GetUserByIdAsync(int id) => _mapper.Map<UserDto>(await _unitOfWork.Users.GetByIdAsync(id));
 
         public bool HasValidMembershipForClub(int userId, int clubId, DateTime date)
         {

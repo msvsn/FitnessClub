@@ -1,11 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using FitnessClub.BLL.Dtos;
 using FitnessClub.DAL;
 using FitnessClub.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace FitnessClub.BLL.Services
 {
@@ -28,20 +29,20 @@ namespace FitnessClub.BLL.Services
             _mapper = mapper;
         }
 
-        public IEnumerable<MembershipTypeDto> GetAllMembershipTypes() =>
-            _mapper.Map<IEnumerable<MembershipTypeDto>>(_unitOfWork.MembershipTypes.GetAll());
+        public async Task<IEnumerable<MembershipTypeDto>> GetAllMembershipTypesAsync() =>
+            _mapper.Map<IEnumerable<MembershipTypeDto>>(await _unitOfWork.MembershipTypes.GetAllAsync());
 
-        public MembershipPurchaseResult PurchaseMembership(int userId, int membershipTypeId, int? clubId)
+        public async Task<MembershipPurchaseResult> PurchaseMembershipAsync(int userId, int membershipTypeId, int? clubId)
         {
-            var membershipType = _unitOfWork.MembershipTypes.GetById(membershipTypeId);
-            
-            if (membershipType == null) 
+            var membershipType = await _unitOfWork.MembershipTypes.GetByIdAsync(membershipTypeId);
+
+            if (membershipType == null)
                 return MembershipPurchaseResult.InvalidMembershipType;
-                
-            if (!membershipType.IsNetwork && clubId == null) 
+
+            if (!membershipType.IsNetwork && clubId == null)
                 return MembershipPurchaseResult.ClubRequiredForSingleClub;
-                
-            if (membershipType.IsNetwork && clubId != null) 
+
+            if (membershipType.IsNetwork && clubId != null)
                 return MembershipPurchaseResult.ClubNotNeededForNetwork;
 
             var membership = new Membership
@@ -52,22 +53,22 @@ namespace FitnessClub.BLL.Services
                 StartDate = DateTime.Now,
                 EndDate = DateTime.Now.AddDays(membershipType.DurationDays)
             };
-            
-            _unitOfWork.Memberships.Add(membership);
-            _unitOfWork.Save();
+
+            await _unitOfWork.Memberships.AddAsync(membership);
+            await _unitOfWork.SaveAsync();
             return MembershipPurchaseResult.Success;
         }
 
-        public MembershipDto GetActiveMembership(int userId)
+        public async Task<MembershipDto> GetActiveMembershipAsync(int userId)
         {
-            var membership = _unitOfWork.Memberships.Query()
+            var membership = await _unitOfWork.Memberships.Query()
                 .Include(m => m.Club)
                 .Include(m => m.MembershipType)
-                .FirstOrDefault(m => m.UserId == userId && m.EndDate > DateTime.Now);
-                
+                .FirstOrDefaultAsync(m => m.UserId == userId && m.EndDate > DateTime.Now);
+
             if (membership == null)
                 return null;
-                
+
             return _mapper.Map<MembershipDto>(membership);
         }
     }
