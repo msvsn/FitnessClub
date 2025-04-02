@@ -1,13 +1,14 @@
-using FitnessClub.BLL.Dtos;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FitnessClub.BLL.Dtos;
+using FitnessClub.BLL.Services;
 
 namespace FitnessClub.BLL.Interfaces
 {
     public interface IMembershipService
     {
-        Task<MembershipDto> PurchaseMembershipAsync(int userId, string type, int months);
-        Task<List<MembershipDto>> GetAllMembershipsWithUsersAsync();
-        Task<MembershipDto> GetMembershipWithUserLazyAsync(int membershipId);
+        Task<IEnumerable<MembershipTypeDto>> GetAllMembershipTypesAsync();
+        Task<MembershipPurchaseResult> PurchaseMembershipAsync(int userId, int membershipTypeId, int? clubId);
+        Task<MembershipDto?> GetActiveMembershipAsync(int userId);
     }
 }

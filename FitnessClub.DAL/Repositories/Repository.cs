@@ -17,14 +17,14 @@ namespace FitnessClub.DAL
         }
 
         public async Task<IEnumerable<T>> GetAllAsync() => await _dbSet.ToListAsync();
-        public async Task<T> GetByIdAsync<TKey>(TKey id) => await _dbSet.FindAsync(id);
+        public async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
         public async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
-        public async Task UpdateAsync(T entity)
+        public void Update(T entity)
         {
+            _dbSet.Attach(entity);
             _context.Entry(entity).State = EntityState.Modified;
-            await Task.CompletedTask;
         }
-        public async Task DeleteAsync(T entity) => _dbSet.Remove(entity);
+        public void Delete(T entity) => _dbSet.Remove(entity);
         public IQueryable<T> Query() => _dbSet.AsQueryable();
     }
 }

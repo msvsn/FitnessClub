@@ -1,20 +1,21 @@
 using System;
+using System.Collections.Generic;
 
-namespace FitnessClub.BLL.Dtos
+namespace FitnessClub.DAL.Entities
 {
-    public class ClassScheduleDto
+    public class ClassSchedule
     {
         public int ClassScheduleId { get; set; }
         public int ClubId { get; set; }
-        public string ClubName { get; set; }
+        public Club Club { get; set; }
+        public int TrainerId { get; set; }
+        public Trainer Trainer { get; set; }
+        public string ClassType { get; set; }
         public DayOfWeek DayOfWeek { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
-        public string ClassType { get; set; }
-        public int TrainerId { get; set; }
-        public string TrainerName { get; set; }
         public int Capacity { get; set; }
         public int BookedPlaces { get; set; }
-        public int AvailablePlaces => Capacity - BookedPlaces;
+        public List<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

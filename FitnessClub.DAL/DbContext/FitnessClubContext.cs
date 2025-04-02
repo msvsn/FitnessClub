@@ -7,9 +7,6 @@ namespace FitnessClub.DAL
     {
         public FitnessClubContext(DbContextOptions<FitnessClubContext> options) : base(options)
         {
-            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-            ChangeTracker.AutoDetectChangesEnabled = true;
-            ChangeTracker.LazyLoadingEnabled = true;
         }
 
         public DbSet<User> Users { get; set; }
@@ -22,33 +19,63 @@ namespace FitnessClub.DAL
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<MembershipType>()
                 .Property(mt => mt.Price)
                 .HasColumnType("decimal(18,2)");
 
-            modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
 
             modelBuilder.Entity<Membership>()
                 .HasOne(m => m.User)
                 .WithMany(u => u.Memberships)
-                .HasForeignKey(m => m.UserId);
+                .HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Membership>()
+                .HasOne(m => m.MembershipType)
+                .WithMany()
+                .HasForeignKey(m => m.MembershipTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Membership>()
+                .HasOne(m => m.Club)
+                .WithMany(c => c.Memberships)
+                .HasForeignKey(m => m.ClubId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+             modelBuilder.Entity<Booking>()
+                .HasOne(b => b.User)
+                .WithMany(u => u.Bookings)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Booking>()
                 .HasOne(b => b.ClassSchedule)
                 .WithMany(cs => cs.Bookings)
-                .HasForeignKey(b => b.ClassScheduleId);
+                .HasForeignKey(b => b.ClassScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ClassSchedule>()
                 .HasOne(cs => cs.Club)
                 .WithMany(c => c.ClassSchedules)
-                .HasForeignKey(cs => cs.ClubId);
+                .HasForeignKey(cs => cs.ClubId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ClassSchedule>()
+                .HasOne(cs => cs.Trainer)
+                .WithMany()
+                .HasForeignKey(cs => cs.TrainerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Trainer>()
                 .HasOne(t => t.Club)
                 .WithMany(c => c.Trainers)
-                .HasForeignKey(t => t.ClubId);
+                .HasForeignKey(t => t.ClubId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
-
-        public override int SaveChanges() => base.SaveChanges();
     }
 }

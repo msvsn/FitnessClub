@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using FitnessClub.DAL.Entities;
 
 namespace FitnessClub.DAL
 {
@@ -13,5 +14,6 @@ namespace FitnessClub.DAL
         IRepository<Membership> Memberships { get; }
         IRepository<Booking> Bookings { get; }
         Task<int> SaveAsync();
+        IRepository<T> GetRepository<T>() where T : class;
     }
 }

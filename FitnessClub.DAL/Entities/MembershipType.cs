@@ -1,6 +1,6 @@
-namespace FitnessClub.BLL.Dtos
+namespace FitnessClub.DAL.Entities
 {
-    public class MembershipTypeDto
+    public class MembershipType
     {
         public int MembershipTypeId { get; set; }
         public string Name { get; set; }
