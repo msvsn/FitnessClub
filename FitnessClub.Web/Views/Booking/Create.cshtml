@@ -1,0 +1,102 @@
+@model FitnessClub.BLL.Dtos.BookingDto
+@{
+    ViewData["Title"] = "Бронювання заняття";
+    var classSchedule = ViewBag.ClassSchedule as FitnessClub.BLL.Dtos.ClassScheduleDto;
+    var classDate = ViewBag.ClassDate as DateTime?;
+}
+
+<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../../img/booking-bg.jpg');">
+    <div class="hero-content">
+        <h1>Бронювання заняття</h1>
+        <p>Забронюйте місце на занятті та отримайте гарантоване відвідування</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <div class="card" style="padding: 30px;">
+                <h2 style="margin-bottom: 30px; text-align: center;">Бронювання заняття</h2>
+                
+                @if (ViewData.ModelState.IsValid == false)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <div asp-validation-summary="All"></div>
+                    </div>
+                }
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+                
+                <div style="margin-bottom: 20px;">
+                    <h4>Деталі заняття:</h4>
+                    <p><strong>Назва:</strong> @classSchedule.ClassType</p>
+                    <p><strong>Час:</strong> @classSchedule.StartTime.ToString("hh\\:mm") - @classSchedule.EndTime.ToString("hh\\:mm")</p>
+                    <p><strong>Дата:</strong> @(classDate?.ToString("dd.MM.yyyy"))</p>
+                    <p><strong>Тренер:</strong> @classSchedule.TrainerName</p>
+                    <p><strong>Клуб:</strong> @classSchedule.ClubName</p>
+                    <p><strong>Вільних місць:</strong> @(classSchedule.Capacity - classSchedule.BookedPlaces) з @classSchedule.Capacity</p>
+                </div>
+                
+                <form method="post" action="/Booking/Book">
+                    <input type="hidden" name="ClassScheduleId" value="@classSchedule.ClassScheduleId" />
+                    <input type="hidden" name="ClassDate" value="@(classDate?.ToString("yyyy-MM-dd"))" />
+                    
+                    @if (User?.Identity?.IsAuthenticated != true)
+                    {
+                        <div class="form-group">
+                            <label class="form-label">Ваше ім'я:</label>
+                            <input type="text" name="GuestName" class="form-control" required />
+                        </div>
+                        
+                        <p style="margin: 20px 0; text-align: center;">
+                            Або <a href="/Account/Login?returnUrl=@Url.Action("Create", "Booking", new { id = classSchedule.ClassScheduleId, date = classDate?.ToString("yyyy-MM-dd") })">увійдіть</a> у свій акаунт
+                        </p>
+                    }
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Забронювати</button>
+                </form>
+                
+                <div style="margin-top: 20px;">
+                    <a href="/Schedule" class="btn btn-outline" style="width: 100%;">Назад до розкладу</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background-color: var(--primary-light);">
+    <div class="container">
+        <h2 class="section-title">Правила бронювання</h2>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="card">
+                <div class="card-body">
+                    <ul style="margin-bottom: 0; padding-left: 20px;">
+                        <li>Бронювання доступне не пізніше ніж за 1 годину до початку заняття</li>
+                        <li>Скасувати бронювання можна не пізніше ніж за 3 години до початку заняття</li>
+                        <li>Якщо ви не можете відвідати заброньоване заняття, будь ласка, скасуйте бронювання</li>
+                        <li>Гостьовий візит оплачується додатково на рецепції клубу</li>
+                        <li>При бронюванні за абонементом необхідно мати активний абонемент відповідного типу</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const availablePlaces = @(classSchedule.Capacity - classSchedule.BookedPlaces);
+            if (availablePlaces <= 0) {
+                alert('На жаль, усі місця на це заняття вже заброньовані');
+                window.location.href = '/Schedule';
+            }
+        });
+    </script>
+} 

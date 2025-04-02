@@ -1,0 +1,98 @@
+@model List<FitnessClub.BLL.Dtos.MembershipTypeDto>
+@{
+    ViewData["Title"] = "Абонементи";
+}
+
+<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/membership-bg.jpg');">
+    <div class="hero-content">
+        <h1>Абонементи</h1>
+        <p>Оберіть абонемент, який найкраще відповідає вашим потребам</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Наші тарифні плани</h2>
+        
+        <div class="card-grid">
+            @foreach (var membershipType in Model)
+            {
+                <div class="card plan @(membershipType.IsNetwork ? "plan-popular" : "")">
+                    <h3 class="card-title">@membershipType.Name</h3>
+                    <div class="plan-price">@membershipType.Price<span> грн/місяць</span></div>
+                    <ul style="text-align: left; margin-bottom: 20px;">
+                        @if (membershipType.IsNetwork)
+                        {
+                            <li>Доступ до всіх клубів мережі</li>
+                            <li>Необмежені групові заняття</li>
+                            <li>Персональна консультація (1 на місяць)</li>
+                            <li>Доступ до басейну (де доступно)</li>
+                        }
+                        else
+                        {
+                            <li>Доступ до одного обраного клубу</li>
+                            <li>Групові заняття (до 8 на місяць)</li>
+                        }
+                        <li>Відвідування без обмежень за часом</li>
+                        <li>Доступ до тренажерного залу</li>
+                        <li>Шафка для зберігання речей</li>
+                        <li>Дія абонементу: @membershipType.DurationDays днів</li>
+                    </ul>
+                    <a href="/Membership/Purchase/@membershipType.MembershipTypeId" class="btn btn-primary">Придбати</a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background-color: var(--primary-light);">
+    <div class="container">
+        <h2 class="section-title">Додаткові опції</h2>
+        
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Персональний тренер</h3>
+                    <p class="card-text">Додайте персональні тренування з нашими професійними тренерами.</p>
+                    <div class="plan-price">300<span> грн/заняття</span></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Заморозка абонемента</h3>
+                    <p class="card-text">Можливість призупинити дію абонемента на період до 30 днів.</p>
+                    <div class="plan-price">100<span> грн</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Поширені запитання</h2>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div style="margin-bottom: 20px;">
+                <h3>Чи можна заморозити абонемент?</h3>
+                <p>Так, заморозка абонемента доступна для всіх типів абонементів за додаткову плату.</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>Як відбувається оплата?</h3>
+                <p>Оплату можна здійснити готівкою або банківською карткою в будь-якому з наших клубів, а також онлайн через особистий кабінет.</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>Чи можна відвідувати різні клуби мережі?</h3>
+                <p>Відвідування різних клубів мережі доступне для власників абонемента "Мережевий".</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>Як записатися на групове заняття?</h3>
+                <p>Запис на групові заняття доступний через особистий кабінет на сайті або на рецепції клубу.</p>
+            </div>
+        </div>
+    </div>
+</section>

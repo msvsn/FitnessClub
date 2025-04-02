@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Вхід";
+}
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 500px; margin: 0 auto;">
+            <div class="card" style="padding: 30px;">
+                <h2 style="margin-bottom: 30px; text-align: center;">Вхід у систему</h2>
+                
+                <form method="post" action="/Account/Login">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Ім'я користувача:</label>
+                        <input type="text" id="username" name="username" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="password">Пароль:</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <label>
+                            <input type="checkbox" name="rememberMe"> Запам'ятати мене
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Увійти</button>
+                    
+                    @if (ViewData["ErrorMessage"] != null)
+                    {
+                        <div style="color: #dc3545; margin-top: 20px; text-align: center;">
+                            @ViewData["ErrorMessage"]
+                        </div>
+                    }
+                </form>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <p>Ще не маєте акаунта? <a href="/Account/Register">Зареєструватися</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background-color: var(--primary-light);">
+    <div class="container">
+        <h2 class="section-title">Переваги авторизованих користувачів</h2>
+        
+        <div class="card-grid">
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Онлайн-бронювання</h3>
+                    <p class="card-text">Бронюйте місця на заняттях онлайн без необхідності відвідувати клуб.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Історія відвідувань</h3>
+                    <p class="card-text">Переглядайте історію своїх відвідувань та слідкуйте за прогресом.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Персональні рекомендації</h3>
+                    <p class="card-text">Отримуйте персоналізовані рекомендації щодо тренувань.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

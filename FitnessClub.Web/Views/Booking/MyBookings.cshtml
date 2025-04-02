@@ -1,0 +1,70 @@
+@model List<FitnessClub.BLL.Dtos.BookingDto>
+@{
+    ViewData["Title"] = "Мої заняття";
+}
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 900px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Мої заброньовані заняття</h2>
+                <a href="/Schedule" class="btn btn-outline">Знайти нові заняття</a>
+            </div>
+            
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info" role="alert">
+                    <p>У вас немає заброньованих занять.</p>
+                    <p>Ви можете забронювати заняття, перейшовши до <a href="/Schedule">розкладу</a>.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Час</th>
+                                <th>Тип заняття</th>
+                                <th>Тренер</th>
+                                <th>Клуб</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in Model.OrderBy(b => b.ClassDate))
+                            {
+                                <tr>
+                                    <td>@booking.ClassDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@booking.ClassSchedule.StartTime.ToString("hh\\:mm") - @booking.ClassSchedule.EndTime.ToString("hh\\:mm")</td>
+                                    <td>@booking.ClassSchedule.ClassType</td>
+                                    <td>@booking.ClassSchedule.TrainerName</td>
+                                    <td>@booking.ClassSchedule.ClubName</td>
+                                    <td>
+                                        @if (booking.ClassDate.Date < DateTime.Now.Date)
+                                        {
+                                            <span class="badge badge-secondary">Завершено</span>
+                                        }
+                                        else if (booking.ClassDate.Date == DateTime.Now.Date)
+                                        {
+                                            <span class="badge badge-primary">Сьогодні</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-success">Заплановано</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            
+            <div style="margin-top: 30px;">
+                <a href="/Account/Profile" class="btn btn-outline">Повернутися до профіля</a>
+            </div>
+        </div>
+    </div>
+</section> 

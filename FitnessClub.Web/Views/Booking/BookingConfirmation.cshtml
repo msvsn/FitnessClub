@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Підтвердження бронювання";
+}
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+            <div class="card" style="padding: 40px;">
+                <h2 style="margin-bottom: 20px;">Бронювання успішно завершено!</h2>
+                
+                <p style="font-size: 1.1rem; margin-bottom: 30px;">
+                    @ViewBag.SuccessMessage
+                </p>
+                
+                <div style="margin-top: 30px;">
+                    <a href="/Schedule" class="btn btn-primary" style="margin-right: 10px;">Переглянути розклад</a>
+                    <a href="/" class="btn btn-outline">На головну</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

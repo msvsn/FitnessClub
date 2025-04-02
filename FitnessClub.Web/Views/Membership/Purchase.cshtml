@@ -1,0 +1,43 @@
+@model IEnumerable<FitnessClub.BLL.Dtos.ClubDto>
+@{
+    ViewData["Title"] = "Придбання абонементу";
+    var clubs = (IEnumerable<FitnessClub.BLL.Dtos.ClubDto>)ViewBag.Clubs;
+    var membershipTypeId = (int)ViewBag.MembershipTypeId;
+}
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <div class="card" style="padding: 30px;">
+                <h2 style="margin-bottom: 30px; text-align: center;">Придбання абонементу</h2>
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+                
+                <form method="post" action="/Membership/Purchase">
+                    <input type="hidden" name="membershipTypeId" value="@membershipTypeId" />
+                    
+                    <div class="form-group">
+                        <label class="form-label">Виберіть клуб:</label>
+                        <select name="clubId" class="form-control" required>
+                            @foreach (var club in clubs)
+                            {
+                                <option value="@club.ClubId">@club.Location</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <p style="margin-top: 20px;">
+                        Придбавши абонемент, ви отримаєте доступ до всіх послуг фітнес-клубу відповідно до обраного тарифного плану.
+                    </p>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Придбати абонемент</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section> 

@@ -1,0 +1,130 @@
+@model List<FitnessClub.BLL.Dtos.ClassScheduleDto>
+@{
+    ViewData["Title"] = "Розклад занять";
+    var clubs = ViewBag.Clubs as IEnumerable<FitnessClub.BLL.Dtos.ClubDto>;
+}
+
+<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/schedule-bg.jpg');">
+    <div class="hero-content">
+        <h1>Розклад занять</h1>
+        <p>Знайдіть зручний для вас час для занять</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Знайти заняття</h2>
+        
+        <div style="max-width: 800px; margin: 0 auto 40px;">
+            <form id="schedule-form" method="post" action="/Schedule/ViewSchedule" class="card" style="padding: 30px;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="club-select">Виберіть клуб:</label>
+                        <select id="club-select" name="clubId" class="form-control">
+                            @foreach (var club in clubs)
+                            {
+                                <option value="@club.ClubId">Клуб "@club.Location"</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="date-select">Виберіть дату:</label>
+                        <input type="date" id="date-select" name="selectedDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Пошук</button>
+            </form>
+        </div>
+        
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        
+        <div id="schedule-results">
+            <h3 style="margin-bottom: 20px;">Оберіть клуб та дату для перегляду розкладу</h3>
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background-color: var(--primary-light);">
+    <div class="container">
+        <h2 class="section-title">Типи занять</h2>
+        
+        <div class="card-grid">
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Йога</h3>
+                    <p class="card-text">Заняття йогою допоможуть покращити гнучкість, зміцнити м'язи та розслабитися.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Пілатес</h3>
+                    <p class="card-text">Пілатес фокусується на зміцненні м'язів кора, покращенні постави та загальної фізичної форми.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Бокс</h3>
+                    <p class="card-text">Тренування з елементами боксу, спрямовані на розвиток витривалості, сили та координації.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Кросфіт</h3>
+                    <p class="card-text">Високоінтенсивний функціональний тренінг, що поєднує елементи важкої атлетики, гімнастики та кардіо.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Фітнес</h3>
+                    <p class="card-text">Комплексні тренування для покращення загальної фізичної форми, здоров'я та самопочуття.</p>
+                </div>
+            </div>
+            <div class="card animate-on-scroll">
+                <div class="card-body">
+                    <h3 class="card-title">Розтяжка</h3>
+                    <p class="card-text">Заняття, спрямовані на розтяжку всіх груп м'язів, поліпшення гнучкості та пластичності тіла.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Як забронювати заняття?</h2>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="card animate-on-scroll">
+                    <div class="card-body" style="text-align: center;">
+                        <h3 class="card-title">Крок 1</h3>
+                        <p class="card-text">Виберіть клуб та дату в формі пошуку</p>
+                    </div>
+                </div>
+                <div class="card animate-on-scroll">
+                    <div class="card-body" style="text-align: center;">
+                        <h3 class="card-title">Крок 2</h3>
+                        <p class="card-text">Знайдіть бажане заняття в розкладі</p>
+                    </div>
+                </div>
+                <div class="card animate-on-scroll">
+                    <div class="card-body" style="text-align: center;">
+                        <h3 class="card-title">Крок 3</h3>
+                        <p class="card-text">Натисніть "Забронювати" і заповніть форму</p>
+                    </div>
+                </div>
+                <div class="card animate-on-scroll">
+                    <div class="card-body" style="text-align: center;">
+                        <h3 class="card-title">Крок 4</h3>
+                        <p class="card-text">Отримайте підтвердження та приходьте на заняття</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

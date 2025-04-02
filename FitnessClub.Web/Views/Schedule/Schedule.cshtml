@@ -1,0 +1,84 @@
+@model List<FitnessClub.BLL.Dtos.ClassScheduleDto>
+@{
+    ViewData["Title"] = "Розклад занять";
+    var selectedDate = ViewBag.SelectedDate as DateTime?;
+    var clubName = ViewBag.ClubName as string;
+    var clubId = ViewBag.ClubId as int?;
+    var cultureName = "uk-UA";
+    var culture = new System.Globalization.CultureInfo(cultureName);
+}
+
+<section class="section">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Розклад занять - клуб "@clubName"</h2>
+            <a href="/Schedule" class="btn btn-outline">Назад до пошуку</a>
+        </div>
+        
+        <h3 style="margin-bottom: 20px;">
+            Дата: @(selectedDate?.ToString("dd.MM.yyyy")) 
+            (@(selectedDate.HasValue ? culture.DateTimeFormat.GetDayName(selectedDate.Value.DayOfWeek) : culture.DateTimeFormat.GetDayName(DayOfWeek.Monday)))
+        </h3>
+        
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-info" role="alert">
+                На вибрану дату занять не знайдено
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Час</th>
+                            <th>Назва</th>
+                            <th>Тренер</th>
+                            <th>Вільні місця</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var schedule in Model.OrderBy(s => s.StartTime))
+                        {
+                            <tr>
+                                <td>@schedule.StartTime.ToString("hh\\:mm") - @schedule.EndTime.ToString("hh\\:mm")</td>
+                                <td>@schedule.ClassType</td>
+                                <td>@schedule.TrainerName</td>
+                                <td>@(schedule.Capacity - schedule.BookedPlaces) з @schedule.Capacity</td>
+                                <td>
+                                    @if (schedule.BookedPlaces < schedule.Capacity)
+                                    {
+                                        <a href="/Booking/Create?id=@schedule.ClassScheduleId&date=@(selectedDate?.ToString("yyyy-MM-dd"))" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.9rem;">Забронювати</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Немає місць</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        
+        <div style="margin-top: 30px;">
+            <form method="post" action="/Schedule/ViewSchedule">
+                <input type="hidden" name="clubId" value="@clubId" />
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="date" name="selectedDate" class="form-control" style="max-width: 200px;" value="@(selectedDate?.ToString("yyyy-MM-dd"))">
+                    <button type="submit" class="btn btn-primary">Змінити дату</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>

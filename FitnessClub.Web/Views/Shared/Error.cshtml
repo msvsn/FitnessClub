@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Помилка";
+}
+
+<section class="section">
+    <div class="container">
+        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+            <h1 class="text-danger">Помилка</h1>
+            <h2 class="text-danger">Виникла помилка при обробці вашого запиту.</h2>
+
+            <p>
+                <strong>Повідомлення про помилку:</strong> <span id="errorMessage">@ViewData["ErrorMessage"]</span>
+            </p>
+
+            <div style="margin-top: 30px;">
+                <a href="/" class="btn btn-primary">Повернутися на головну</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            if (!$('#errorMessage').text()) {
+                $('#errorMessage').text('Невідома помилка');
+            }
+        });
+    </script>
+} 
