@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "S9iXdsy69bETm4492S4qmI7kvj1/SXSVHCeyT64tKg0=",
+  "Source": "FitnessClub.Web",
+  "BasePath": "_content/FitnessClub.Web",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

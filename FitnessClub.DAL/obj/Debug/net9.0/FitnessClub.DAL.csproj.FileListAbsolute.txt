@@ -1,0 +1,11 @@
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\bin\Debug\net9.0\FitnessClub.DAL.deps.json
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\bin\Debug\net9.0\FitnessClub.DAL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\bin\Debug\net9.0\FitnessClub.DAL.pdb
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.AssemblyInfoInputs.cache
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.AssemblyInfo.cs
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.csproj.CoreCompileInputs.cache
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\refint\FitnessClub.DAL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\FitnessClub.DAL.pdb
+C:\Users\kolos\fitnessclublab\FitnessClub.DAL\obj\Debug\net9.0\ref\FitnessClub.DAL.dll

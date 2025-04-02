@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "FitnessClub.BLL/1.0.0": {
+        "dependencies": {
+          "FitnessClub.DAL": "1.0.0"
+        },
+        "runtime": {
+          "FitnessClub.BLL.dll": {}
+        }
+      },
+      "FitnessClub.DAL/1.0.0": {
+        "runtime": {
+          "FitnessClub.DAL.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "FitnessClub.BLL/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "FitnessClub.DAL/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

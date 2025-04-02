@@ -1,0 +1,15 @@
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\bin\Debug\net9.0\FitnessClub.BLL.deps.json
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\bin\Debug\net9.0\FitnessClub.BLL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\bin\Debug\net9.0\FitnessClub.BLL.pdb
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\bin\Debug\net9.0\FitnessClub.DAL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\bin\Debug\net9.0\FitnessClub.DAL.pdb
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.csproj.AssemblyReference.cache
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.AssemblyInfoInputs.cache
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.AssemblyInfo.cs
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.csproj.CoreCompileInputs.cache
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessC.AE02D5B5.Up2Date
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\refint\FitnessClub.BLL.dll
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\FitnessClub.BLL.pdb
+C:\Users\kolos\fitnessclublab\FitnessClub.BLL\obj\Debug\net9.0\ref\FitnessClub.BLL.dll
