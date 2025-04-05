@@ -1,12 +1,7 @@
-@model IEnumerable<FitnessClub.BLL.Dtos.ClassScheduleDto>
-@using Microsoft.AspNetCore.Mvc.Rendering // Для SelectList
+@model FitnessClub.Web.ViewModels.ScheduleViewModel
 
 @{
-    ViewData["Title"] = "Class Schedule";
-    var selectedClubId = ViewBag.SelectedClubId as int?;
-    var selectedDateStr = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
-    var selectedClubName = ViewBag.SelectedClubName as string ?? "All Clubs";
-    var clubsSelectList = ViewBag.Clubs as SelectList;
+    ViewData["Title"] = "Розклад занять";
 }
 
 <section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/schedule-bg.jpg');">
@@ -25,11 +20,11 @@
                 <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="club-select">Виберіть клуб:</label>
-                        @Html.DropDownList("clubId", clubsSelectList, "-- Оберіть клуб --", new { id = "club-select", @class = "form-control" })
+                        @Html.DropDownList("clubId", Model.Clubs, "-- Оберіть клуб --", new { id = "club-select", @class = "form-control" })
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="date-select">Виберіть дату:</label>
-                        <input type="date" id="date-select" name="date" class="form-control" value="@selectedDateStr">
+                        <input type="date" id="date-select" name="date" class="form-control" value="@Model.SelectedDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
                 <div style="text-align: center;">
@@ -39,22 +34,22 @@
         </div>
         
         <div id="schedule-results">
-             @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger" role="alert">
-                    @TempData["ErrorMessage"]
-                </div>
-            }
-            else if (ViewBag.InfoMessage != null)
-            {
-                 <div class="alert alert-info" role="alert">
-                    @ViewBag.InfoMessage
-                </div>
-            }
+             @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+             {
+                 <div class="alert alert-success">@Model.SuccessMessage</div>
+             }
+             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+             {
+                 <div class="alert alert-danger">@Model.ErrorMessage</div>
+             }
+             @if (!string.IsNullOrEmpty(Model.InfoMessage))
+             {
+                  <div class="alert alert-info">@Model.InfoMessage</div>
+             }
 
-            @if (Model != null && Model.Any())
+            @if (Model.Schedules.Any())
             {
-                <h3 style="margin-bottom: 20px;">Розклад для "@selectedClubName" на @selectedDateStr</h3>
+                <h3 style="margin-bottom: 20px;">Розклад для "@Model.SelectedClubName" на @Model.SelectedDate.ToString("dd.MM.yyyy")</h3>
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -67,14 +62,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var schedule in Model)
+                        @foreach (var schedule in Model.Schedules)
                         {
                             var startTime = schedule.StartTime;
                             var endTime = schedule.EndTime;
                             var duration = endTime - startTime;
                             var availablePlaces = schedule.Capacity - schedule.BookedPlaces;
                             var canBook = availablePlaces > 0;
-                            DateTime.TryParse(selectedDateStr, out var classDate);
 
                             <tr>
                                 <td>@startTime.ToString("hh\\:mm") - @endTime.ToString("hh\\:mm")</td>
@@ -92,9 +86,9 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (canBook && classDate.Date >= DateTime.Today)
+                                    @if (canBook && Model.SelectedDate.Date >= DateTime.Today)
                                     {
-                                        <a asp-controller="Booking" asp-action="Create" asp-route-scheduleId="@schedule.ClassScheduleId" asp-route-classDate="@selectedDateStr" class="btn btn-primary btn-sm">Забронювати</a>
+                                        <a asp-controller="Booking" asp-action="Create" asp-route-scheduleId="@schedule.ClassScheduleId" asp-route-classDate="@Model.SelectedDate.ToString("yyyy-MM-dd")" class="btn btn-primary btn-sm">Забронювати</a>
                                     }
                                     else if (!canBook)
                                     {
@@ -110,86 +104,6 @@
                     </tbody>
                 </table>
             }
-        </div>
-    </div>
-</section>
-
-<section class="section" style="background-color: var(--primary-light);">
-    <div class="container">
-        <h2 class="section-title">Типи занять</h2>
-        
-        <div class="card-grid">
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Йога</h3>
-                    <p class="card-text">Заняття йогою допоможуть покращити гнучкість, зміцнити м'язи та розслабитися.</p>
-                </div>
-            </div>
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Пілатес</h3>
-                    <p class="card-text">Пілатес фокусується на зміцненні м'язів кора, покращенні постави та загальної фізичної форми.</p>
-                </div>
-            </div>
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Бокс</h3>
-                    <p class="card-text">Тренування з елементами боксу, спрямовані на розвиток витривалості, сили та координації.</p>
-                </div>
-            </div>
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Кросфіт</h3>
-                    <p class="card-text">Високоінтенсивний функціональний тренінг, що поєднує елементи важкої атлетики, гімнастики та кардіо.</p>
-                </div>
-            </div>
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Фітнес</h3>
-                    <p class="card-text">Комплексні тренування для покращення загальної фізичної форми, здоров'я та самопочуття.</p>
-                </div>
-            </div>
-            <div class="card animate-on-scroll">
-                <div class="card-body">
-                    <h3 class="card-title">Розтяжка</h3>
-                    <p class="card-text">Заняття, спрямовані на розтяжку всіх груп м'язів, поліпшення гнучкості та пластичності тіла.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container">
-        <h2 class="section-title">Як забронювати заняття?</h2>
-        
-        <div style="max-width: 800px; margin: 0 auto;">
-            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-                <div class="card animate-on-scroll">
-                    <div class="card-body" style="text-align: center;">
-                        <h3 class="card-title">Крок 1</h3>
-                        <p class="card-text">Виберіть клуб та дату в формі пошуку</p>
-                    </div>
-                </div>
-                <div class="card animate-on-scroll">
-                    <div class="card-body" style="text-align: center;">
-                        <h3 class="card-title">Крок 2</h3>
-                        <p class="card-text">Знайдіть бажане заняття в розкладі</p>
-                    </div>
-                </div>
-                <div class="card animate-on-scroll">
-                    <div class="card-body" style="text-align: center;">
-                        <h3 class="card-title">Крок 3</h3>
-                        <p class="card-text">Натисніть "Забронювати" і заповніть форму</p>
-                    </div>
-                </div>
-                <div class="card animate-on-scroll">
-                    <div class="card-body" style="text-align: center;">
-                        <h3 class="card-title">Крок 4</h3>
-                        <p class="card-text">Отримайте підтвердження та приходьте на заняття</p>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </section>

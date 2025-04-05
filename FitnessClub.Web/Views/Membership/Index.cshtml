@@ -6,7 +6,7 @@
 <section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/membership-bg.jpg'); background-size: cover; background-position: center;">
     <div class="hero-content">
         <h1>Наші Абонементи</h1>
-        <p>Оберіть найкращий план для ваших тренувань</p>
+        <p>Оберіть той, який підходить вам найбільше.</p>
     </div>
 </section>
 
@@ -61,14 +61,13 @@
                                   <li>Тривалість: @type.DurationDays днів</li>
                                 </ul>
                                 <div class="mt-auto">
-                                    @if (User.Identity?.IsAuthenticated ?? false)
+                                    @if (Model.IsUserAuthenticated)
                                     {
                                         <a asp-action="Purchase" asp-route-id="@type.MembershipTypeId" class="btn btn-primary w-100">Придбати</a>
                                     }
                                     else
                                     {
-                                        var returnUrl = Url.Action("Index", "Membership"); 
-                                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl" class="btn btn-secondary w-100">Увійдіть щоб придбати</a>
+                                        <a href="@Model.LoginUrlWithReturn" class="btn btn-secondary w-100">Увійдіть щоб придбати</a>
                                     }
                                 </div>
                             </div>
@@ -77,57 +76,5 @@
                 }
             </div>
         }
-    </div>
-</section>
-
-<section class="section" style="background-color: var(--primary-light);">
-    <div class="container">
-        <h2 class="section-title">Додаткові опції</h2>
-        
-        <div class="card-grid">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title">Персональний тренер</h3>
-                    <p class="card-text">Додайте персональні тренування з нашими професійними тренерами.</p>
-                    <div class="plan-price">300<span> грн/заняття</span></div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title">Заморозка абонемента</h3>
-                    <p class="card-text">Можливість призупинити дію абонемента на період до 30 днів.</p>
-                    <div class="plan-price">100<span> грн</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container">
-        <h2 class="section-title">Поширені запитання</h2>
-        
-        <div style="max-width: 800px; margin: 0 auto;">
-            <div style="margin-bottom: 20px;">
-                <h3>Чи можна заморозити абонемент?</h3>
-                <p>Так, заморозка абонемента доступна для всіх типів абонементів за додаткову плату.</p>
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <h3>Як відбувається оплата?</h3>
-                <p>Оплату можна здійснити готівкою або банківською карткою в будь-якому з наших клубів, а також онлайн через особистий кабінет.</p>
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <h3>Чи можна відвідувати різні клуби мережі?</h3>
-                <p>Відвідування різних клубів мережі доступне для власників абонемента "Мережевий".</p>
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <h3>Як записатися на групове заняття?</h3>
-                <p>Запис на групові заняття доступний через особистий кабінет на сайті або на рецепції клубу.</p>
-            </div>
-        </div>
     </div>
 </section>

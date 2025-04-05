@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Threading.Tasks;
 using FitnessClub.BLL.Interfaces;
 using System.Linq;
+using FitnessClub.Web.ViewModels;
 
 namespace FitnessClub.Web.Controllers
 {
@@ -28,63 +29,57 @@ namespace FitnessClub.Web.Controllers
         {
             _logger.LogInformation("Fetching schedule for ClubId: {ClubId}, Date: {Date}", clubId, date);
             DateTime selectedDate = date ?? DateTime.Today;
-            
+
+            var viewModel = new ScheduleViewModel
+            {
+                SelectedClubId = clubId,
+                SelectedDate = selectedDate
+            };
+
             IEnumerable<ClubDto> clubs = new List<ClubDto>();
             try
             {
                 clubs = await _clubService.GetAllClubsAsync();
                 _logger.LogInformation("Retrieved {ClubCount} clubs.", clubs.Count());
-                foreach (var club in clubs)
-                {
-                    _logger.LogDebug("Club ID: {ClubId}, Name: {ClubName}", club.ClubId, club.Name); 
-                }
+                viewModel.Clubs = new SelectList(clubs, "ClubId", "Name", clubId);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching clubs.");
-                ViewBag.ErrorMessage = "Error loading club list.";
+                viewModel.ErrorMessage = "Помилка завантаження списку клубів.";
             }
-            
-            var clubsSelectList = new SelectList(clubs, "ClubId", "Name", clubId);
 
             IEnumerable<ClassScheduleDto> schedules = new List<ClassScheduleDto>();
-            string selectedClubName = "All Clubs";
-            if (clubId.HasValue)
+            if (clubId.HasValue && string.IsNullOrEmpty(viewModel.ErrorMessage))
             {
                 try
                 {
                      schedules = await _scheduleService.GetSchedulesByClubAndDateAsync(clubId.Value, selectedDate);
                     _logger.LogInformation("Service returned {ScheduleCount} schedules for ClubId: {ClubId}, Date: {Date}", 
                                              schedules.Count(), clubId.Value, selectedDate.ToString("yyyy-MM-dd"));
-                    selectedClubName = clubs.FirstOrDefault(c => c.ClubId == clubId)?.Name ?? "Unknown Club";
-                    _logger.LogInformation("Retrieved {ScheduleCount} schedules for ClubId: {ClubId}", schedules.Count(), clubId.Value);
+                    viewModel.SelectedClubName = clubs.FirstOrDefault(c => c.ClubId == clubId)?.Name ?? "Невідомий клуб";
+                    viewModel.Schedules = schedules;
+
+                    if (!schedules.Any())
+                    {
+                        viewModel.InfoMessage = $"Немає занять у клубі \'{viewModel.SelectedClubName}\' на {selectedDate:dd.MM.yyyy}.";
+                    }
                 }
                  catch (Exception ex)
                 {
                      _logger.LogError(ex, "Error fetching schedules for ClubId: {ClubId}", clubId.Value);
-                    ViewBag.ErrorMessage = "Error loading schedule.";
+                    viewModel.ErrorMessage = (viewModel.ErrorMessage ?? "") + " Помилка завантаження розкладу.";
                 }
             }
-
-            ViewBag.Clubs = clubsSelectList;
-            ViewBag.SelectedClubId = clubId;
-            ViewBag.SelectedDate = selectedDate.ToString("yyyy-MM-dd");
-            ViewBag.SelectedClubName = selectedClubName;
-
-            if (!schedules.Any() && clubId.HasValue)
+            else if (!clubId.HasValue && string.IsNullOrEmpty(viewModel.ErrorMessage))
             {
-                ViewBag.InfoMessage = $"Немає занять у клубі '{selectedClubName}' на {selectedDate:dd.MM.yyyy}." + (ViewBag.ErrorMessage != null ? " " + ViewBag.ErrorMessage : "");
-            }
-            else if (!clubId.HasValue && ViewBag.ErrorMessage == null)
-            {
-                ViewBag.InfoMessage = "Будь ласка, оберіть клуб для перегляду розкладу.";
-            }
-            else if(ViewBag.ErrorMessage != null)
-            {
-                 ViewBag.InfoMessage = ViewBag.ErrorMessage;
+                viewModel.InfoMessage = "Будь ласка, оберіть клуб для перегляду розкладу.";
             }
 
-            return View(schedules);
+            if (TempData["ErrorMessage"] != null) viewModel.ErrorMessage = (viewModel.ErrorMessage ?? "") + TempData["ErrorMessage"]?.ToString();
+            if (TempData["SuccessMessage"] != null) viewModel.SuccessMessage = TempData["SuccessMessage"]?.ToString();
+
+            return View(viewModel);
         }
     }
 }

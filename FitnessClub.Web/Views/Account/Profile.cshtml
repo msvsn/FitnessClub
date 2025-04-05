@@ -21,17 +21,17 @@
                         @if (Model.ActiveMembership != null)
                         {
                             <div class="@(Model.ActiveMembership.EndDate < DateTime.Now ? "alert alert-danger" : "")">
-                                <p><strong>Тип:</strong> @(Model.ActiveMembership.MembershipTypeId == 1 ? "Один клуб" : "Мережевий")</p>
+                                <p><strong>Тип:</strong> @(Model.ActiveMembership.MembershipTypeId == 1 ? "Звичайний" : "Мережевий")</p>
                                 <p><strong>Клуб:</strong> @Model.ActiveMembership.ClubName</p>
                                 <p><strong>Дійсний до:</strong> @Model.ActiveMembership.EndDate.ToString("dd.MM.yyyy")</p>
                                 
-                                @if (Model.ActiveMembership.EndDate < DateTime.Now)
+                                @if (Model.ActiveMembership.IsExpired)
                                 {
                                     <p style="color: #dc3545; margin-top: 10px;">Ваш абонемент закінчився. Придбайте новий для отримання послуг.</p>
                                 }
-                                else
+                                else if (Model.ActiveMembership.RemainingDays.HasValue)
                                 {
-                                    <p><strong>Залишилось днів:</strong> @((Model.ActiveMembership.EndDate - DateTime.Now).Days)</p>
+                                    <p><strong>Залишилось днів:</strong> @Model.ActiveMembership.RemainingDays</p>
                                 }
                             </div>
                         }

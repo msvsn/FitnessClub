@@ -43,6 +43,13 @@ namespace FitnessClub.Web.Controllers
                 return RedirectToAction("Index", "Schedule");
             }
 
+            if (schedule.BookedPlaces >= schedule.Capacity)
+            {
+                _logger.LogWarning("Attempted to access booking creation for full schedule ID: {ScheduleId}", scheduleId);
+                TempData["ErrorMessage"] = "На жаль, усі місця на це заняття вже заброньовані.";
+                return RedirectToAction("Index", "Schedule"); 
+            }
+
             var viewModel = new BookingViewModel
             {
                 ClassScheduleId = scheduleId,

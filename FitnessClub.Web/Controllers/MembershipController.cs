@@ -48,7 +48,9 @@ namespace FitnessClub.Web.Controllers
             var viewModel = new MembershipViewModel
             {
                  MembershipTypes = membershipTypeDtos,
-                 ActiveMembership = activeMembership
+                 ActiveMembership = activeMembership,
+                 IsUserAuthenticated = User.Identity?.IsAuthenticated ?? false,
+                 LoginUrlWithReturn = Url.Action("Login", "Account", new { returnUrl = Url.Action("Index", "Membership") })
             };
 
             return View(viewModel);
