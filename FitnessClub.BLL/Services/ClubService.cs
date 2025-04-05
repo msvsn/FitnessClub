@@ -28,6 +28,7 @@ namespace FitnessClub.BLL.Services
         {
             _logger.LogInformation("Fetching all clubs.");
             var clubs = await _clubRepository.GetAllAsync();
+            _logger.LogInformation("Retrieved {ClubCount} clubs from repository.", clubs.Count());
             return _mapper.Map<IEnumerable<ClubDto>>(clubs);
         }
 
@@ -58,7 +59,7 @@ namespace FitnessClub.BLL.Services
             await _clubRepository.AddAsync(clubEntity);
 
             await _unitOfWork.SaveAsync();
-            _logger.LogInformation("Club created successfully with ID: {ClubId}", clubEntity.Id);
+            _logger.LogInformation("Club created successfully with ID: {ClubId}", clubEntity.ClubId);
 
             return _mapper.Map<ClubDto>(clubEntity);
         }
@@ -66,7 +67,7 @@ namespace FitnessClub.BLL.Services
         public async Task UpdateClubAsync(int id, ClubDto clubDto)
         {
              _logger.LogInformation("Updating club with ID: {ClubId}", id);
-             if (id != clubDto.Id)
+             if (id != clubDto.ClubId)
             {
                 _logger.LogError("Club ID mismatch in update request.");
                 throw new ArgumentException("ID mismatch");

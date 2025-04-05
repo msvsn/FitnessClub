@@ -13,23 +13,20 @@ namespace FitnessClub.BLL.Helpers
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
-        public static bool VerifyPassword(string password, string hash)
+        public static bool VerifyPassword(string password, string hashedPassword)
         {
-             if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hash))
+            if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
             {
                 return false;
             }
+
             try
             {
-                return BCrypt.Net.BCrypt.Verify(password, hash);
+                return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
             }
-            catch (BCrypt.Net.SaltParseException)
+            catch (Exception)
             {
-                 return false;
-            }
-             catch (Exception ex)
-            {
-                 return false;
+                return false;
             }
         }
     }

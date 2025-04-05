@@ -1,7 +1,12 @@
-@model List<FitnessClub.BLL.Dtos.ClassScheduleDto>
+@model IEnumerable<FitnessClub.BLL.Dtos.ClassScheduleDto>
+@using Microsoft.AspNetCore.Mvc.Rendering // Для SelectList
+
 @{
-    ViewData["Title"] = "Розклад занять";
-    var clubs = ViewBag.Clubs as IEnumerable<FitnessClub.BLL.Dtos.ClubDto>;
+    ViewData["Title"] = "Class Schedule";
+    var selectedClubId = ViewBag.SelectedClubId as int?;
+    var selectedDateStr = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedClubName = ViewBag.SelectedClubName as string ?? "All Clubs";
+    var clubsSelectList = ViewBag.Clubs as SelectList;
 }
 
 <section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/schedule-bg.jpg');">
@@ -16,35 +21,95 @@
         <h2 class="section-title">Знайти заняття</h2>
         
         <div style="max-width: 800px; margin: 0 auto 40px;">
-            <form id="schedule-form" method="post" action="/Schedule/ViewSchedule" class="card" style="padding: 30px;">
-                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <form id="schedule-form" method="get" action="@Url.Action("Index", "Schedule")" class="card" style="padding: 30px;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="club-select">Виберіть клуб:</label>
-                        <select id="club-select" name="clubId" class="form-control">
-                            @foreach (var club in clubs)
-                            {
-                                <option value="@club.ClubId">Клуб "@club.Location"</option>
-                            }
-                        </select>
+                        @Html.DropDownList("clubId", clubsSelectList, "-- Оберіть клуб --", new { id = "club-select", @class = "form-control" })
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="date-select">Виберіть дату:</label>
-                        <input type="date" id="date-select" name="selectedDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        <input type="date" id="date-select" name="date" class="form-control" value="@selectedDateStr">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Пошук</button>
+                <div style="text-align: center;">
+                    <button type="submit" id="view-schedule-button" class="btn btn-primary" style="display: none;">Переглянути розклад</button>
+                </div>
             </form>
         </div>
         
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger" role="alert">
-                @TempData["ErrorMessage"]
-            </div>
-        }
-        
         <div id="schedule-results">
-            <h3 style="margin-bottom: 20px;">Оберіть клуб та дату для перегляду розкладу</h3>
+             @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @TempData["ErrorMessage"]
+                </div>
+            }
+            else if (ViewBag.InfoMessage != null)
+            {
+                 <div class="alert alert-info" role="alert">
+                    @ViewBag.InfoMessage
+                </div>
+            }
+
+            @if (Model != null && Model.Any())
+            {
+                <h3 style="margin-bottom: 20px;">Розклад для "@selectedClubName" на @selectedDateStr</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Час</th>
+                            <th>Тип заняття</th>
+                            <th>Тренер</th>
+                            <th>Тривалість</th>
+                            <th>Доступність</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var schedule in Model)
+                        {
+                            var startTime = schedule.StartTime;
+                            var endTime = schedule.EndTime;
+                            var duration = endTime - startTime;
+                            var availablePlaces = schedule.Capacity - schedule.BookedPlaces;
+                            var canBook = availablePlaces > 0;
+                            DateTime.TryParse(selectedDateStr, out var classDate);
+
+                            <tr>
+                                <td>@startTime.ToString("hh\\:mm") - @endTime.ToString("hh\\:mm")</td>
+                                <td>@schedule.ClassType</td>
+                                <td>@schedule.TrainerName</td>
+                                <td>@duration.TotalMinutes хв.</td>
+                                <td>
+                                    @if (canBook)
+                                    {
+                                        <span class="badge bg-success">@availablePlaces місць доступно</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Немає місць</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (canBook && classDate.Date >= DateTime.Today)
+                                    {
+                                        <a asp-controller="Booking" asp-action="Create" asp-route-scheduleId="@schedule.ClassScheduleId" asp-route-classDate="@selectedDateStr" class="btn btn-primary btn-sm">Забронювати</a>
+                                    }
+                                    else if (!canBook)
+                                    {
+                                        <span class="text-muted">Немає місць</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Минуле</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
         </div>
     </div>
 </section>
@@ -128,3 +193,22 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clubSelect = document.getElementById('club-select');
+            const viewButton = document.getElementById('view-schedule-button');
+
+            function toggleButtonVisibility() {
+                if (clubSelect.value) {
+                    viewButton.style.display = 'block';
+                } else {
+                    viewButton.style.display = 'none';
+                }
+            }
+            toggleButtonVisibility();
+            clubSelect.addEventListener('change', toggleButtonVisibility);
+        });
+    </script>
+}

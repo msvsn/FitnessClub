@@ -1,15 +1,21 @@
-@model IEnumerable<FitnessClub.BLL.Dtos.ClubDto>
+@model FitnessClub.Web.ViewModels.PurchaseMembershipViewModel
 @{
     ViewData["Title"] = "Придбання абонементу";
-    var clubs = (IEnumerable<FitnessClub.BLL.Dtos.ClubDto>)ViewBag.Clubs;
-    var membershipTypeId = (int)ViewBag.MembershipTypeId;
 }
 
 <section class="section">
     <div class="container">
         <div style="max-width: 600px; margin: 0 auto;">
             <div class="card" style="padding: 30px;">
-                <h2 style="margin-bottom: 30px; text-align: center;">Придбання абонементу</h2>
+                <h2 style="margin-bottom: 10px; text-align: center;">Придбання абонементу</h2>
+                <h4 style="margin-bottom: 30px; text-align: center; font-weight: normal;">@Model.MembershipType?.Name</h4>
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <div asp-validation-summary="All"></div>
+                    </div>
+                }
                 
                 @if (TempData["ErrorMessage"] != null)
                 {
@@ -18,24 +24,33 @@
                     </div>
                 }
                 
-                <form method="post" action="/Membership/Purchase">
-                    <input type="hidden" name="membershipTypeId" value="@membershipTypeId" />
+                <form method="post" asp-action="Purchase">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MembershipTypeId" />
                     
-                    <div class="form-group">
-                        <label class="form-label">Виберіть клуб:</label>
-                        <select name="clubId" class="form-control" required>
-                            @foreach (var club in clubs)
-                            {
-                                <option value="@club.ClubId">@club.Location</option>
-                            }
+                    <div class="form-group mb-3">
+                        <label asp-for="ClubId" class="form-label">Виберіть клуб:</label>
+                        <select asp-for="ClubId" asp-items="Model.Clubs" class="form-control">
+                            <option value="">-- Будь ласка, оберіть клуб --</option>
                         </select>
+                        <span asp-validation-for="ClubId" class="text-danger"></span>
                     </div>
                     
-                    <p style="margin-top: 20px;">
-                        Придбавши абонемент, ви отримаєте доступ до всіх послуг фітнес-клубу відповідно до обраного тарифного плану.
-                    </p>
+                    @if (Model.MembershipType != null && !Model.MembershipType.IsNetwork)
+                    {
+                        <p style="margin-top: 20px;">
+                             @Model.MembershipType?.Description
+                        </p>
+                        <p>
+                             Тривалість: <strong>@Model.MembershipType?.DurationDays днів</strong>
+                        </p>
+                         <p>
+                             Ціна: <strong>@Model.MembershipType?.Price.ToString("C", new System.Globalization.CultureInfo("uk-UA"))</strong>
+                        </p>
+                    }
                     
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Придбати абонемент</button>
+                    <a asp-action="Index" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Назад до списку абонементів</a>
                 </form>
             </div>
         </div>

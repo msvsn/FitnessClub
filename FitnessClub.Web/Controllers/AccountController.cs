@@ -1,47 +1,68 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using FitnessClub.BLL.Dtos;
 using FitnessClub.BLL.Services;
 using FitnessClub.DAL.Entities;
-using System;
+using FitnessClub.BLL.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FitnessClub.BLL.Interfaces;
 using FitnessClub.Web.ViewModels;
+using AutoMapper;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace FitnessClub.Web.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly UserService _userService;
-        private readonly MembershipService _membershipService;
+        private readonly IUserService _userService;
+        private readonly IMembershipService _membershipService;
+        private readonly IMapper _mapper;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(UserService userService, MembershipService membershipService)
+        public AccountController(IUserService userService, IMembershipService membershipService, IMapper mapper, ILogger<AccountController> logger)
         {
             _userService = userService;
             _membershipService = membershipService;
+            _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpGet]
         public IActionResult Register() => View();
 
         [HttpPost]
-        public IActionResult Register(RegisterViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _userService.Register(model.FirstName, model.LastName, model.Username, model.Password);
-                    var user = _userService.Login(model.Username, model.Password);
-                    SignInUser(user);
-                    return RedirectToAction("Index", "Home");
+                    await _userService.RegisterAsync(model.FirstName, model.LastName, model.Username, model.Password);
+                    var userDto = await _userService.LoginAsync(model.Username, model.Password);
+                    if (userDto != null)
+                    {
+                        await SignInUser(userDto);
+                        return RedirectToAction("Index", "Home");
+                    }
+                    ModelState.AddModelError(string.Empty, "Registration successful, but failed to log in automatically.");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError(string.Empty, ex.Message);
+                }
+                catch (ArgumentException ex)
+                {
+                    ModelState.AddModelError(string.Empty, ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("", ex.Message);
+                    _logger.LogError(ex, "Error during registration.");
+                    ModelState.AddModelError(string.Empty, "An unexpected error occurred during registration.");
                 }
             }
             return View(model);
@@ -51,35 +72,23 @@ namespace FitnessClub.Web.Controllers
         public IActionResult Login() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password, bool rememberMe = false)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            var user = _userService.Login(username, password);
-            
-            if (user != null)
+            if (ModelState.IsValid)
             {
-                var claims = new List<Claim>
+                var userDto = await _userService.LoginAsync(model.Username, model.Password);
+                if (userDto != null)
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                    new Claim(ClaimTypes.Role, "User")
-                };
-                
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var principal = new ClaimsPrincipal(identity);
-                
-                var authProperties = new AuthenticationProperties
+                    await SignInUser(userDto);
+                    return RedirectToAction("Index", "Home");
+                }
+                else
                 {
-                    IsPersistent = rememberMe,
-                    ExpiresUtc = System.DateTimeOffset.UtcNow.AddDays(7)
-                };
-                
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
-                
-                return RedirectToAction("Index", "Home");
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                }
             }
-            
-            ViewData["ErrorMessage"] = "Невірний логін або пароль";
-            return View();
+            return View(model);
         }
 
         [Authorize]
@@ -90,24 +99,53 @@ namespace FitnessClub.Web.Controllers
         }
 
         [Authorize]
-        public IActionResult Profile()
+        public async Task<IActionResult> Profile()
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var user = _userService.GetUserById(userId);
-            var membership = _membershipService.GetActiveMembership(userId);
-            ViewBag.Membership = membership;
-            return View(user);
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+            {
+                _logger.LogWarning("Could not parse UserId from claims.");
+                 return Challenge();
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            var membership = await _membershipService.GetActiveMembershipAsync(userId);
+
+            var profileViewModel = new UserProfileViewModel
+            {
+                User = user!,
+                ActiveMembership = membership
+            };
+
+            if (profileViewModel.User == null)
+            {
+                _logger.LogWarning("User data not found for logged in user ID: {UserId}", userId);
+                return RedirectToAction("Login");
+            }
+
+            return View(profileViewModel);
         }
 
-        private void SignInUser(BLL.Dtos.UserDto user)
+        private async Task SignInUser(BLL.Dtos.UserDto user)
         {
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString())
             };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity)).Wait();
+
+            var claimsIdentity = new ClaimsIdentity(
+                claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
         }
     }
 }

@@ -1,84 +1,71 @@
+@using System.Security.Claims
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FitnessClub</title>
-    <link rel="stylesheet" href="~/css/site.css" />
-    @RenderSection("Styles", required: false)
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/FitnessClub.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar">
-            <div class="container navbar-container">
-                <a class="navbar-brand" href="/">FitnessClub</a>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Home" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")" href="/">Головна</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Schedule" ? "active" : "")" href="/Schedule">Розклад</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Membership" ? "active" : "")" href="/Membership">Абонементи</a>
-                    </li>
-                    <li class="nav-item">
-                        @if (User.Identity.IsAuthenticated)
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">FitnessClub</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Головна</a>
+                        </li>
+                         <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Розклад</a>
+                        </li>
+                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "Profile" ? "active" : "")" href="/Account/Profile">Мій профіль</a>
+                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Membership" asp-action="Index">Абонементи</a>
+                            </li>
+                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="MyBookings">Мої заняття</a>
+                            </li>
+                        }
+                        @if (User.Identity?.IsAuthenticated ?? false)
+                        {
+                             <li class="nav-item">
+                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Profile">Профіль </a>
+                             </li>
                         }
                         else
                         {
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "Login" ? "active" : "")" href="/Account/Login">Вхід</a>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Увійти</a>
+                            </li>
                         }
-                    </li>
-                </ul>
+                    </ul>
+                </div>
             </div>
         </nav>
     </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
 
-    <main role="main">
-        @RenderBody()
-    </main>
-
-    <footer class="footer">
+    <footer class="border-top footer text-muted">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3 class="footer-title">FitnessClub</h3>
-                    <p>Ваш шлях до здорового способу життя та гарної фізичної форми починається тут.</p>
-                </div>
-                <div class="footer-section">
-                    <h3 class="footer-title">Навігація</h3>
-                    <ul class="footer-links">
-                        <li class="footer-link"><a href="/">Головна</a></li>
-                        <li class="footer-link"><a href="/Schedule">Розклад</a></li>
-                        <li class="footer-link"><a href="/Membership">Абонементи</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3 class="footer-title">Контакти</h3>
-                    <ul class="footer-links">
-                        <li class="footer-link">м. Київ, вул. Спортивна, 123</li>
-                        <li class="footer-link">+380 44 123-45-67</li>
-                        <li class="footer-link">info@fitnessclub.com</li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3 class="footer-title">Графік роботи</h3>
-                    <ul class="footer-links">
-                        <li class="footer-link">Пн-Пт: 7:00 - 22:00</li>
-                        <li class="footer-link">Сб-Нд: 9:00 - 20:00</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="copyright">
-                &copy; @DateTime.Now.Year - FitnessClub. Всі права захищено.
-            </div>
+            &copy; 2025 - FitnessClub - <a asp-area="" asp-controller="Home" asp-action="Privacy">Конфіденційність</a>
         </div>
     </footer>
-
-    <script src="~/js/site.js"></script>
-    @RenderSection("Scripts", required: false)
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

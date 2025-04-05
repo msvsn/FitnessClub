@@ -1,7 +1,6 @@
-@model FitnessClub.BLL.Dtos.UserDto
+@model FitnessClub.Web.ViewModels.UserProfileViewModel
 @{
     ViewData["Title"] = "Мій профіль";
-    var membership = ViewBag.Membership as FitnessClub.BLL.Dtos.MembershipDto;
 }
 
 <section class="section">
@@ -13,26 +12,26 @@
                 <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
                     <div style="flex: 1; min-width: 300px;">
                         <h3 style="font-size: 1.4rem; margin-bottom: 15px;">Особиста інформація</h3>
-                        <p><strong>Ім'я:</strong> @Model.FirstName @Model.LastName</p>
-                        <p><strong>Користувач:</strong> @Model.Username</p>
+                        <p><strong>Ім'я:</strong> @Model.User.FirstName @Model.User.LastName</p>
+                        <p><strong>Користувач:</strong> @Model.User.Username</p>
                     </div>
                     
                     <div style="flex: 1; min-width: 300px;">
                         <h3 style="font-size: 1.4rem; margin-bottom: 15px;">Членство</h3>
-                        @if (membership != null)
+                        @if (Model.ActiveMembership != null)
                         {
-                            <div class="@(membership.EndDate < DateTime.Now ? "alert alert-danger" : "")">
-                                <p><strong>Тип:</strong> @(membership.MembershipTypeId == 1 ? "Один клуб" : "Мережевий")</p>
-                                <p><strong>Клуб:</strong> @membership.ClubName</p>
-                                <p><strong>Дійсний до:</strong> @membership.EndDate.ToString("dd.MM.yyyy")</p>
+                            <div class="@(Model.ActiveMembership.EndDate < DateTime.Now ? "alert alert-danger" : "")">
+                                <p><strong>Тип:</strong> @(Model.ActiveMembership.MembershipTypeId == 1 ? "Один клуб" : "Мережевий")</p>
+                                <p><strong>Клуб:</strong> @Model.ActiveMembership.ClubName</p>
+                                <p><strong>Дійсний до:</strong> @Model.ActiveMembership.EndDate.ToString("dd.MM.yyyy")</p>
                                 
-                                @if (membership.EndDate < DateTime.Now)
+                                @if (Model.ActiveMembership.EndDate < DateTime.Now)
                                 {
-                                    <p style="color: #dc3545; margin-top: 10px;">Ваш абонемент закінчився! Придбайте новий для отримання послуг.</p>
+                                    <p style="color: #dc3545; margin-top: 10px;">Ваш абонемент закінчився. Придбайте новий для отримання послуг.</p>
                                 }
                                 else
                                 {
-                                    <p><strong>Залишилось днів:</strong> @((membership.EndDate - DateTime.Now).Days)</p>
+                                    <p><strong>Залишилось днів:</strong> @((Model.ActiveMembership.EndDate - DateTime.Now).Days)</p>
                                 }
                             </div>
                         }
@@ -46,15 +45,13 @@
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center; flex-wrap: wrap;">
                     <a href="/Membership" class="btn btn-primary">Придбати/Оновити абонемент</a>
-                    <a href="/Account/Logout" class="btn btn-outline">Вийти</a>
+                    <a href="/Booking/MyBookings" class="btn btn-info">Переглянути мої бронювання</a>
+                    <form asp-action="Logout" method="post" class="d-inline">
+                         <button type="submit" class="btn btn-outline-secondary">Вийти</button>
+                    </form>
                 </div>
-            </div>
-            
-            <div class="card" style="padding: 30px;">
-                <h3 style="font-size: 1.4rem; margin-bottom: 15px;">Мої заняття</h3>
-                <a href="/Booking/MyBookings" class="btn btn-primary">Переглянути мої бронювання</a>
             </div>
         </div>
     </div>

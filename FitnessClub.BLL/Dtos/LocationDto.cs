@@ -2,8 +2,9 @@ namespace FitnessClub.BLL.Dtos
 {
     public class LocationDto
     {
-        public int Id { get; set; }
-        public string Address { get; set; }
-        public int ClubId { get; set; }
+        public int LocationId { get; set; }
+        public string Address { get; set; } = null!;
+        public string City { get; set; } = null!;
+        public string PostalCode { get; set; } = null!;
     }
 }

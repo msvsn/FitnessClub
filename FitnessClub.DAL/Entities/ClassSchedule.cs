@@ -7,15 +7,16 @@ namespace FitnessClub.DAL.Entities
     {
         public int ClassScheduleId { get; set; }
         public int ClubId { get; set; }
-        public Club Club { get; set; }
+        public virtual Club Club { get; set; } = null!;
         public int TrainerId { get; set; }
-        public Trainer Trainer { get; set; }
-        public string ClassType { get; set; }
+        public virtual Trainer Trainer { get; set; } = null!;
+        public string ClassType { get; set; } = null!;
         public DayOfWeek DayOfWeek { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public int Capacity { get; set; }
         public int BookedPlaces { get; set; }
-        public List<Booking> Bookings { get; set; } = new List<Booking>();
+
+        public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

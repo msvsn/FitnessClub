@@ -1,47 +1,82 @@
-@model List<FitnessClub.BLL.Dtos.MembershipTypeDto>
+@model FitnessClub.Web.ViewModels.MembershipViewModel
 @{
     ViewData["Title"] = "Абонементи";
 }
 
-<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/membership-bg.jpg');">
+<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/membership-bg.jpg'); background-size: cover; background-position: center;">
     <div class="hero-content">
-        <h1>Абонементи</h1>
-        <p>Оберіть абонемент, який найкраще відповідає вашим потребам</p>
+        <h1>Наші Абонементи</h1>
+        <p>Оберіть найкращий план для ваших тренувань</p>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <h2 class="section-title">Наші тарифні плани</h2>
+        <h2 class="section-title">Доступні типи абонементів</h2>
         
-        <div class="card-grid">
-            @foreach (var membershipType in Model)
-            {
-                <div class="card plan @(membershipType.IsNetwork ? "plan-popular" : "")">
-                    <h3 class="card-title">@membershipType.Name</h3>
-                    <div class="plan-price">@membershipType.Price<span> грн/місяць</span></div>
-                    <ul style="text-align: left; margin-bottom: 20px;">
-                        @if (membershipType.IsNetwork)
-                        {
-                            <li>Доступ до всіх клубів мережі</li>
-                            <li>Необмежені групові заняття</li>
-                            <li>Персональна консультація (1 на місяць)</li>
-                            <li>Доступ до басейну (де доступно)</li>
-                        }
-                        else
-                        {
-                            <li>Доступ до одного обраного клубу</li>
-                            <li>Групові заняття (до 8 на місяць)</li>
-                        }
-                        <li>Відвідування без обмежень за часом</li>
-                        <li>Доступ до тренажерного залу</li>
-                        <li>Шафка для зберігання речей</li>
-                        <li>Дія абонементу: @membershipType.DurationDays днів</li>
-                    </ul>
-                    <a href="/Membership/Purchase/@membershipType.MembershipTypeId" class="btn btn-primary">Придбати</a>
-                </div>
-            }
-        </div>
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        @if (TempData["SuccessMessage"] != null)
+        {
+             <div class="alert alert-success" role="alert">
+                 @TempData["SuccessMessage"]
+            </div>
+        }
+        
+         @if (Model.ActiveMembership != null)
+        {
+             <div class="card mb-4 bg-light">
+                 <div class="card-header">Ваш активний абонемент</div>
+                 <div class="card-body">
+                     <h5 class="card-title">@Model.ActiveMembership.MembershipTypeName</h5>
+                     <p class="card-text">Дійсний до: @Model.ActiveMembership.EndDate.ToString("dd.MM.yyyy")</p>
+                     @if (!string.IsNullOrEmpty(Model.ActiveMembership.ClubName))
+                    {
+                         <p class="card-text">Клуб: @Model.ActiveMembership.ClubName</p>
+                    }
+                 </div>
+            </div>
+        }
+        
+        @if (!Model.MembershipTypes.Any())
+        {
+            <p>На даний момент немає доступних типів абонементів.</p>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var type in Model.MembershipTypes)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@type.Name</h5>
+                                <p class="card-text text-muted">@type.Description</p>
+                                <ul class="list-unstyled mt-3 mb-4">
+                                  <li>Ціна: <strong class="fs-5">@type.Price.ToString("C")</strong></li>
+                                  <li>Тривалість: @type.DurationDays днів</li>
+                                </ul>
+                                <div class="mt-auto">
+                                    @if (User.Identity?.IsAuthenticated ?? false)
+                                    {
+                                        <a asp-action="Purchase" asp-route-id="@type.MembershipTypeId" class="btn btn-primary w-100">Придбати</a>
+                                    }
+                                    else
+                                    {
+                                        var returnUrl = Url.Action("Index", "Membership"); 
+                                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl" class="btn btn-secondary w-100">Увійдіть щоб придбати</a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </section>
 

@@ -37,7 +37,7 @@ namespace FitnessClub.DAL
 
             modelBuilder.Entity<Membership>()
                 .HasOne(m => m.MembershipType)
-                .WithMany()
+                .WithMany(mt => mt.Memberships)
                 .HasForeignKey(m => m.MembershipTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 

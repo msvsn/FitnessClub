@@ -1,4 +1,5 @@
-@model FitnessClub.BLL.Dtos.BookingDto
+@model FitnessClub.Web.ViewModels.BookingViewModel
+
 @{
     ViewData["Title"] = "Бронювання заняття";
     var classSchedule = ViewBag.ClassSchedule as FitnessClub.BLL.Dtos.ClassScheduleDto;
@@ -34,36 +35,55 @@
                 
                 <div style="margin-bottom: 20px;">
                     <h4>Деталі заняття:</h4>
-                    <p><strong>Назва:</strong> @classSchedule.ClassType</p>
-                    <p><strong>Час:</strong> @classSchedule.StartTime.ToString("hh\\:mm") - @classSchedule.EndTime.ToString("hh\\:mm")</p>
-                    <p><strong>Дата:</strong> @(classDate?.ToString("dd.MM.yyyy"))</p>
-                    <p><strong>Тренер:</strong> @classSchedule.TrainerName</p>
-                    <p><strong>Клуб:</strong> @classSchedule.ClubName</p>
-                    <p><strong>Вільних місць:</strong> @(classSchedule.Capacity - classSchedule.BookedPlaces) з @classSchedule.Capacity</p>
+                    <dl class="row">
+                        <dt class="col-sm-4">Клуб:</dt>
+                        <dd class="col-sm-8">@Model.Schedule?.ClubName</dd>
+
+                        <dt class="col-sm-4">Тип заняття:</dt>
+                        <dd class="col-sm-8">@Model.Schedule?.ClassType</dd>
+
+                        <dt class="col-sm-4">Тренер:</dt>
+                        <dd class="col-sm-8">@Model.Schedule?.TrainerName</dd>
+
+                        <dt class="col-sm-4">Дата та час:</dt>
+                        <dd class="col-sm-8">@Model.ClassDate.ToString("dd.MM.yyyy") @Model.Schedule?.StartTime.ToString("hh\\:mm") - @Model.Schedule?.EndTime.ToString("hh\\:mm")</dd>
+
+                        <dt class="col-sm-4">Тривалість:</dt>
+                        @if (Model.Schedule != null)
+                        {
+                             var duration = Model.Schedule.EndTime - Model.Schedule.StartTime;
+                             <dd class="col-sm-8">@duration.TotalMinutes хв.</dd>
+                        }
+                        else
+                        {
+                             <dd class="col-sm-8">N/A</dd>
+                        }
+                    </dl>
                 </div>
                 
-                <form method="post" action="/Booking/Book">
-                    <input type="hidden" name="ClassScheduleId" value="@classSchedule.ClassScheduleId" />
-                    <input type="hidden" name="ClassDate" value="@(classDate?.ToString("yyyy-MM-dd"))" />
+                <form asp-action="Create">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="ClassScheduleId" />
+                    <input type="hidden" asp-for="ClassDate" />
                     
-                    @if (User?.Identity?.IsAuthenticated != true)
+                    @if (!User.Identity?.IsAuthenticated ?? true)
                     {
                         <div class="form-group">
-                            <label class="form-label">Ваше ім'я:</label>
-                            <input type="text" name="GuestName" class="form-control" required />
+                            <label asp-for="GuestName" class="control-label">Ім'я гостя:</label>
+                            <input asp-for="GuestName" class="form-control" placeholder="Введіть ваше ім'я"/>
+                            <span asp-validation-for="GuestName" class="text-danger"></span>
                         </div>
-                        
-                        <p style="margin: 20px 0; text-align: center;">
-                            Або <a href="/Account/Login?returnUrl=@Url.Action("Create", "Booking", new { id = classSchedule.ClassScheduleId, date = classDate?.ToString("yyyy-MM-dd") })">увійдіть</a> у свій акаунт
-                        </p>
                     }
-                    
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Забронювати</button>
+                    else
+                    {
+                        <input type="hidden" asp-for="GuestName" value="" />
+                    }
+
+                    <div class="form-group mt-3 d-flex justify-content-between">
+                        <input type="submit" value="Підтвердити бронювання" class="btn btn-primary" />
+                        <a asp-action="Index" asp-controller="Schedule" class="btn btn-secondary">Назад до розкладу</a>
+                    </div>
                 </form>
-                
-                <div style="margin-top: 20px;">
-                    <a href="/Schedule" class="btn btn-outline" style="width: 100%;">Назад до розкладу</a>
-                </div>
             </div>
         </div>
     </div>
@@ -92,11 +112,25 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const availablePlaces = @(classSchedule.Capacity - classSchedule.BookedPlaces);
-            if (availablePlaces <= 0) {
-                alert('На жаль, усі місця на це заняття вже заброньовані');
-                window.location.href = '/Schedule';
+            @if (Model?.Schedule != null)
+            {
+                @:const scheduleData = {
+                @:    capacity: @Model.Schedule.Capacity,
+                @:    bookedPlaces: @Model.Schedule.BookedPlaces
+                @:};
+                @:const availablePlaces = scheduleData.capacity - scheduleData.bookedPlaces;
+                @:if (availablePlaces <= 0) {
+                @:    alert('На жаль, усі місця на це заняття вже заброньовані.');
+                @:    window.location.href = '@Url.Action("Index", "Schedule")'; 
+                @:}
+            }
+            else
+            {
+                @:console.error('Schedule data is missing in the model.');
+                @:alert('Сталася помилка при завантаженні даних про заняття.');
+                @:window.location.href = '@Url.Action("Index", "Schedule")'; 
             }
         });
     </script>
-} 
+    <partial name="_ValidationScriptsPartial" />
+}

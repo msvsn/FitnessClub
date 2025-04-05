@@ -121,12 +121,16 @@ namespace FitnessClub.BLL.Services
         {
             _logger.LogInformation("Fetching active membership for User {UserId}.", userId);
             var now = DateTime.UtcNow;
+            
+            _logger.LogDebug("Querying memberships for User {UserId} active on {Now}", userId, now.ToString("o"));
 
             var memberships = await _membershipRepository.FindAsync(
                 m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
                 m => m.Club,
                 m => m.MembershipType
             );
+            
+            _logger.LogDebug("Found {Count} potentially active memberships for User {UserId}.", memberships.Count(), userId);
 
             var latestEndingMembership = memberships.OrderByDescending(m => m.EndDate).FirstOrDefault();
 
@@ -136,7 +140,7 @@ namespace FitnessClub.BLL.Services
                 return null;
             }
 
-            return _mapper.Map<MembershipDto>(latestEndingMembership);
+            return _mapper.Map<MembershipDto>(latestEndingMembership)!;
         }
     }
 }

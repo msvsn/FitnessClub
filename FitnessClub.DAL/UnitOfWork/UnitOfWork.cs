@@ -35,7 +35,7 @@ namespace FitnessClub.DAL
             {
                 return await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
                 throw;
             }

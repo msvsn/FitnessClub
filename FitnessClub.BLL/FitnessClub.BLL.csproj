@@ -2,11 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FitnessClub.DAL\FitnessClub.DAL.csproj" />
+    <ProjectReference Include="../FitnessClub.Core.Abstractions/FitnessClub.Core.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
   </ItemGroup>
 
   <PropertyGroup>

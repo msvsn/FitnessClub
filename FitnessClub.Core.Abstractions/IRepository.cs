@@ -6,7 +6,6 @@ namespace FitnessClub.Core.Abstractions
     {
         Task<IEnumerable<TEntity>> GetAllAsync();
         Task<TEntity?> GetByIdAsync(int id);
-        Task<TEntity?> GetByIdAsync(int id);
         Task<IEnumerable<TEntity>> FindAsync(
             Expression<Func<TEntity, bool>> predicate,
             params Expression<Func<TEntity, object>>[] includeProperties);
