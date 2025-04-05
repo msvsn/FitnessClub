@@ -14,5 +14,7 @@ namespace FitnessClub.BLL.Dtos
         public string? ClubName { get; set; }
         public bool IsActive => DateTime.Now >= StartDate && DateTime.Now <= EndDate;
         public bool IsNetworkMembership => ClubId == null;
+        public bool IsExpired => EndDate < DateTime.Now;
+        public int? RemainingDays => IsExpired ? null : (EndDate.Date - DateTime.Now.Date).Days;
     }
 }
