@@ -33,7 +33,10 @@ namespace FitnessClub.BLL.AutoMapping
                 .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => src.ClassSchedule.Club.Name))
                 .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => $"{src.ClassSchedule.Trainer.FirstName} {src.ClassSchedule.Trainer.LastName}"))
                 .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.ClassSchedule.StartTime))
-                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.ClassSchedule.EndTime));
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.ClassSchedule.EndTime))
+                .ForMember(dest => dest.GuestName, opt => opt.MapFrom(src => 
+                    src.GuestName ?? (src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : null)
+                ));
         }
     }
 }

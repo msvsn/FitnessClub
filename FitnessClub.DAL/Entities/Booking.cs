@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FitnessClub.DAL.Entities
 {
@@ -12,6 +14,7 @@ namespace FitnessClub.DAL.Entities
         public virtual ClassSchedule ClassSchedule { get; set; } = null!;
         public DateTime ClassDate { get; set; }
         public DateTime BookingDate { get; set; }
+        public bool IsCancelled { get; set; } = false;
         public bool IsMembershipBooking { get; set; }
     }
 }

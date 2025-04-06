@@ -16,5 +16,6 @@ namespace FitnessClub.BLL.Dtos
         public TimeSpan EndTime { get; set; }
         public DateTime BookingDate { get; set; }
         public bool IsMembershipBooking { get; set; }
+        public bool IsCancelled { get; set; }
     }
 }

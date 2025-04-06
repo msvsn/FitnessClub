@@ -3,6 +3,7 @@ using System;
 using FitnessClub.DAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitnessClub.DAL.Migrations
 {
     [DbContext(typeof(FitnessClubContext))]
-    partial class FitnessClubContextModelSnapshot : ModelSnapshot
+    [Migration("20250406211841_UpdateModelAfterFixes")]
+    partial class UpdateModelAfterFixes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");

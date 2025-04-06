@@ -9,6 +9,7 @@ namespace FitnessClub.DAL.Entities
         public decimal Price { get; set; }
         public int DurationDays { get; set; }
         public bool IsNetwork { get; set; }
+        public bool IsOneTimePass { get; set; }
         public virtual ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     }
 }

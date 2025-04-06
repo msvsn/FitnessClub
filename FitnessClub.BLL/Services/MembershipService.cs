@@ -3,41 +3,27 @@ using FitnessClub.BLL.Dtos;
 using FitnessClub.BLL.Interfaces;
 using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL.Entities;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FitnessClub.BLL.Enums;
 
 namespace FitnessClub.BLL.Services
 {
-    public enum MembershipPurchaseResult
-    {
-        Success,
-        InvalidMembershipType,
-        ClubRequiredForSingleClub,
-        ClubNotNeededForNetwork,
-        UserNotFound,
-        ClubNotFound,
-        AlreadyHasActiveMembership,
-        UnknownError
-    }
-
     public class MembershipService : IMembershipService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly ILogger<MembershipService> _logger;
         private readonly IRepository<User> _userRepository;
         private readonly IRepository<MembershipType> _membershipTypeRepository;
         private readonly IRepository<Club> _clubRepository;
         private readonly IRepository<Membership> _membershipRepository;
 
-        public MembershipService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<MembershipService> logger)
+        public MembershipService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _userRepository = _unitOfWork.GetRepository<User>();
             _membershipTypeRepository = _unitOfWork.GetRepository<MembershipType>();
             _clubRepository = _unitOfWork.GetRepository<Club>();
@@ -46,57 +32,60 @@ namespace FitnessClub.BLL.Services
 
         public async Task<IEnumerable<MembershipTypeDto>> GetAllMembershipTypesAsync()
         {
-            _logger.LogDebug("Fetching all membership types.");
             var types = await _membershipTypeRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<MembershipTypeDto>>(types);
         }
 
         public async Task<MembershipPurchaseResult> PurchaseMembershipAsync(int userId, int membershipTypeId, int? clubId)
         {
-            _logger.LogDebug("Attempting purchase membership Type: {MembershipTypeId}, Club: {ClubId} for User: {UserId}",
-               membershipTypeId, clubId?.ToString() ?? "N/A", userId);
+            var membershipType = await _membershipTypeRepository.GetByIdAsync(membershipTypeId);
+            if (membershipType == null)
+            {
+                return MembershipPurchaseResult.InvalidMembershipType;
+            }
+
+            if (membershipType.IsOneTimePass)
+            {
+                var existingOneTimePass = await GetActiveOneTimePassAsync(userId);
+                if (existingOneTimePass != null)
+                {
+                    return MembershipPurchaseResult.AlreadyHasActiveOneTimePass;
+                }
+            }
 
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                _logger.LogWarning("Membership purchase failed: User {UserId} not found.", userId);
                 return MembershipPurchaseResult.UserNotFound;
             }
 
             var existingActiveMembership = await GetActiveMembershipAsync(userId);
-            if (existingActiveMembership != null)
+            
+            if (existingActiveMembership != null && existingActiveMembership.IsNetworkMembership)
             {
-                _logger.LogWarning("Membership purchase failed: User {UserId} already has an active membership (ID: {ExistingMembershipId}, Ends: {EndDate})",
-                    userId, existingActiveMembership.MembershipId, existingActiveMembership.EndDate.ToString("yyyy-MM-dd"));
+                return MembershipPurchaseResult.CannotPurchaseWithNetwork;
+            }
+
+            if (existingActiveMembership != null && !membershipType.IsOneTimePass)
+            {
                 return MembershipPurchaseResult.AlreadyHasActiveMembership;
             }
 
-            var membershipType = await _membershipTypeRepository.GetByIdAsync(membershipTypeId);
-            if (membershipType == null)
+            if (!membershipType.IsNetwork)
             {
-                _logger.LogWarning("Membership purchase failed: Membership Type {MembershipTypeId} not found.", membershipTypeId);
-                return MembershipPurchaseResult.InvalidMembershipType;
-            }
-
-            if (!membershipType.IsNetwork && !clubId.HasValue)
-            {
-                _logger.LogWarning("Membership purchase failed: Club ID is required for non-network membership type {MembershipTypeId}.", membershipTypeId);
-                return MembershipPurchaseResult.ClubRequiredForSingleClub;
-            }
-            if (membershipType.IsNetwork && clubId.HasValue)
-            {
-                _logger.LogWarning("Membership purchase failed: Club ID must be null for network membership type {MembershipTypeId}.", membershipTypeId);
-                return MembershipPurchaseResult.ClubNotNeededForNetwork;
-            }
-
-            if (clubId.HasValue)
-            {
+                if (!clubId.HasValue)
+                {
+                    return MembershipPurchaseResult.ClubRequiredForSingleClub;
+                }
                 var club = await _clubRepository.GetByIdAsync(clubId.Value);
                 if (club == null)
                 {
-                    _logger.LogWarning("Membership purchase failed: Specified Club ID {ClubId} not found.", clubId.Value);
                     return MembershipPurchaseResult.ClubNotFound;
                 }
+            }
+            else if (clubId.HasValue)
+            {
+                return MembershipPurchaseResult.ClubNotNeededForNetwork;
             }
 
             var startDate = DateTime.UtcNow;
@@ -115,43 +104,79 @@ namespace FitnessClub.BLL.Services
             {
                 await _membershipRepository.AddAsync(membership);
                 await _unitOfWork.SaveAsync();
-                _logger.LogInformation("Membership Type {MembershipTypeId} purchased successfully for User {UserId}. Membership ID: {MembershipId}",
-                    membershipTypeId, userId, membership.MembershipId);
                 return MembershipPurchaseResult.Success;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "An unexpected error occurred while purchasing membership Type {MembershipTypeId} for User {UserId}.", membershipTypeId, userId);
                 return MembershipPurchaseResult.UnknownError;
             }
         }
 
         public async Task<MembershipDto?> GetActiveMembershipAsync(int userId)
         {
-            _logger.LogDebug("Fetching active membership for User {UserId}.", userId);
             var now = DateTime.UtcNow;
             
-            _logger.LogDebug("Querying memberships for User {UserId} active on {Now}", userId, now.ToString("o"));
-
             var memberships = await _membershipRepository.FindAsync(
                 m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
                 m => m.Club,
                 m => m.MembershipType
             );
             
-            _logger.LogDebug("Found {Count} potentially active memberships for User {UserId}.", memberships.Count(), userId);
-
             var latestEndingMembership = memberships.OrderByDescending(m => m.EndDate).FirstOrDefault();
 
             if (latestEndingMembership == null)
             {
-                _logger.LogInformation("No active membership found for User {UserId}.", userId);
                 return null;
             }
             else
             {
                 return _mapper.Map<MembershipDto>(latestEndingMembership);
             }
+        }
+
+        public async Task<MembershipDto?> GetActiveOneTimePassAsync(int userId)
+        {
+            var now = DateTime.UtcNow;
+
+            var oneTimePasses = await _membershipRepository.FindAsync(
+                m => m.UserId == userId &&
+                     m.StartDate <= now &&
+                     m.EndDate >= now &&
+                     m.MembershipType.IsOneTimePass,
+                m => m.MembershipType,
+                m => m.Club
+            );
+
+            var latestEndingOneTimePass = oneTimePasses.OrderByDescending(m => m.EndDate).FirstOrDefault();
+
+            if (latestEndingOneTimePass == null)
+            {
+                return null;
+            }
+            else
+            {
+                return _mapper.Map<MembershipDto>(latestEndingOneTimePass);
+            }
+        }
+
+        public async Task<List<MembershipDto>> GetAllActiveMembershipsAsync(int userId)
+        {
+            var now = DateTime.UtcNow;
+            
+            var activeMemberships = await _membershipRepository.FindAsync(
+                m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
+                m => m.Club,
+                m => m.MembershipType
+            );
+            
+            var sortedMemberships = activeMemberships.OrderBy(m => m.EndDate).ToList();
+
+            return _mapper.Map<List<MembershipDto>>(sortedMemberships);
+        }
+
+        public async Task ConsumeOneTimePassAsync(int membershipId)
+        {
+            await _membershipRepository.DeleteByIdAsync(membershipId);
         }
     }
 }

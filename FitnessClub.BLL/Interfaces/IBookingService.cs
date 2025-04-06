@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FitnessClub.BLL.Dtos;
-using FitnessClub.BLL.Services;
-using static FitnessClub.BLL.Services.BookingService;
+using FitnessClub.BLL.Enums;
 
 namespace FitnessClub.BLL.Interfaces
 {
