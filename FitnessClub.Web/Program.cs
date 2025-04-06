@@ -3,7 +3,6 @@ using FitnessClub.BLL.Interfaces;
 using FitnessClub.BLL.Services;
 using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL;
-using FitnessClub.DAL.Entities;
 using FitnessClub.DAL.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +34,7 @@ builder.Services.AddScoped<IMembershipService, MembershipService>();
 builder.Services.AddScoped<IClassScheduleService, ClassScheduleService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingStrategy, MembershipBookingStrategy>();
-builder.Services.AddScoped<IBookingStrategy, GuestBookingStrategy>();
+
 builder.Services.AddLogging();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -68,13 +67,11 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapGet("/hello", () => "Hello World!");
-
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var configuration = services.GetRequiredService<IConfiguration>();
-    var logger = services.GetRequiredService<ILogger<FitnessClubContext>>();
+    var logger = services.GetRequiredService<ILogger<FitnessClub.DAL.FitnessClubContext>>();
     try
     {
         await DbInitializer.InitializeAsync(services, configuration, logger);

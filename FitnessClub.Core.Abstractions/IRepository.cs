@@ -10,9 +10,7 @@ namespace FitnessClub.Core.Abstractions
             Expression<Func<TEntity, bool>> predicate,
             params Expression<Func<TEntity, object>>[] includeProperties);
         Task AddAsync(TEntity entity);
-        Task AddRangeAsync(IEnumerable<TEntity> entities);
         void Update(TEntity entity);
-        void Delete(TEntity entity);
         Task DeleteByIdAsync(int id);
         IQueryable<TEntity> Query();
     }

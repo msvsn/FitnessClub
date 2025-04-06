@@ -16,6 +16,7 @@ using FitnessClub.Core.Abstractions;
 
 namespace FitnessClub.Web.Controllers
 {
+    [Authorize]
     public class MembershipController : Controller
     {
         private readonly IMembershipService _membershipService;
@@ -35,36 +36,44 @@ namespace FitnessClub.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var membershipTypes = await _unitOfWork.GetRepository<FitnessClub.DAL.Entities.MembershipType>().GetAllAsync();
-            var membershipTypeDtos = _mapper.Map<IEnumerable<MembershipTypeDto>>(membershipTypes);
+            _logger.LogInformation("Membership Index page accessed.");
+            var userId = GetCurrentUserId();
+            var isAuthenticated = userId.HasValue;
+            MembershipDto? activeMembership = null;
 
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            MembershipDto? activeMembership = null; 
-            if (int.TryParse(userIdStr, out var userId))
+            if (isAuthenticated)
             {
-                 activeMembership = await _membershipService.GetActiveMembershipAsync(userId);
+                _logger.LogDebug("User {UserId} is authenticated, fetching active membership.", userId.Value);
+                activeMembership = await _membershipService.GetActiveMembershipAsync(userId.Value);
             }
-            
+            else
+            {
+                 _logger.LogDebug("User is not authenticated.");
+            }
+
+            var allTypes = await _membershipService.GetAllMembershipTypesAsync();
+            var availableTypes = activeMembership == null ? allTypes : Enumerable.Empty<MembershipTypeDto>();
+
             var viewModel = new MembershipViewModel
             {
-                 MembershipTypes = membershipTypeDtos,
-                 ActiveMembership = activeMembership,
-                 IsUserAuthenticated = User.Identity?.IsAuthenticated ?? false,
-                 LoginUrlWithReturn = Url.Action("Login", "Account", new { returnUrl = Url.Action("Index", "Membership") })
+                MembershipTypes = allTypes,
+                ActiveMembership = activeMembership,
+                AvailableTypes = availableTypes,
+                IsUserAuthenticated = isAuthenticated,
+                 LoginUrlWithReturn = !isAuthenticated && availableTypes.Any() 
+                                        ? Url.Action("Login", "Account", new { returnUrl = Url.Action("Index", "Membership") })
+                                        : null
             };
+
+            _logger.LogInformation("Returning Membership Index view. UserAuthenticated: {IsAuth}, HasActiveMembership: {HasActive}, AvailableTypesCount: {AvailableCount}", 
+                isAuthenticated, activeMembership != null, availableTypes.Count());
 
             return View(viewModel);
         }
 
-        private int? GetCurrentUserId()
-        {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(userIdStr, out var userId) ? userId : (int?)null;
-        }
-
         public async Task<IActionResult> Purchase(int id)
         {
-            if (!User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated != true)
             {
                 _logger.LogWarning("Unauthorized attempt to access membership purchase page.");
                 TempData["ErrorMessage"] = "Для придбання абонементу необхідно спочатку увійти в систему";
@@ -78,6 +87,25 @@ namespace FitnessClub.Web.Controllers
                 _logger.LogWarning("Attempted to purchase non-existent MembershipType ID: {MembershipTypeId}", id);
                 TempData["ErrorMessage"] = "Вибраний тип абонементу не знайдено.";
                 return RedirectToAction("Index");
+            }
+
+            var userId = GetCurrentUserId();
+            if (userId.HasValue)
+            {
+                var activeMembership = await _membershipService.GetActiveMembershipAsync(userId.Value);
+                if (activeMembership != null)
+                {
+                    _logger.LogWarning("User {UserId} attempted to access purchase page for type {MembershipTypeId} but already has an active membership (ID: {ActiveMembershipId}).", 
+                                     userId.Value, id, activeMembership.MembershipId);
+                    TempData["ErrorMessage"] = $"Ви вже маєте активний абонемент (дійсний до {activeMembership.EndDate:yyyy-MM-dd}). Ви не можете придбати новий, поки діє поточний.";
+                    return RedirectToAction("Index");
+                }
+            }
+            else
+            {
+                _logger.LogError("User ID is null after successful authentication check in Purchase GET for MembershipType ID: {MembershipTypeId}", id);
+                TempData["ErrorMessage"] = "Помилка визначення користувача. Спробуйте увійти знову.";
+                return RedirectToAction("Login", "Account");
             }
 
             var viewModel = new PurchaseMembershipViewModel
@@ -179,6 +207,12 @@ namespace FitnessClub.Web.Controllers
                 MembershipPurchaseResult.UnknownError => "Виникла невідома помилка",
                 _ => "Виникла помилка при придбанні абонементу"
             };
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(userIdStr, out var userId) ? userId : (int?)null;
         }
     }
 }

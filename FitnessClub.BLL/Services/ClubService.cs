@@ -45,68 +45,6 @@ namespace FitnessClub.BLL.Services
             return _mapper.Map<ClubDto>(club);
         }
 
-        public async Task<ClubDto> CreateClubAsync(ClubDto clubDto)
-        {
-            _logger.LogInformation("Creating a new club: {ClubName}", clubDto.Name);
-            if (clubDto == null) 
-            { 
-                 _logger.LogError("Club DTO is null.");
-                 throw new ArgumentNullException(nameof(clubDto));
-            } 
-
-            var clubEntity = _mapper.Map<Club>(clubDto);
-
-            await _clubRepository.AddAsync(clubEntity);
-
-            await _unitOfWork.SaveAsync();
-            _logger.LogInformation("Club created successfully with ID: {ClubId}", clubEntity.ClubId);
-
-            return _mapper.Map<ClubDto>(clubEntity);
-        }
-
-        public async Task UpdateClubAsync(int id, ClubDto clubDto)
-        {
-             _logger.LogInformation("Updating club with ID: {ClubId}", id);
-             if (id != clubDto.ClubId)
-            {
-                _logger.LogError("Club ID mismatch in update request.");
-                throw new ArgumentException("ID mismatch");
-            }
-             if (clubDto == null)
-            { 
-                 _logger.LogError("Club DTO is null for update.");
-                 throw new ArgumentNullException(nameof(clubDto));
-            } 
-
-            var existingClub = await _clubRepository.GetByIdAsync(id);
-            if (existingClub == null)
-            {
-                _logger.LogWarning("Club with ID: {ClubId} not found for update.", id);
-                throw new KeyNotFoundException($"Club with ID {id} not found");
-            }
-
-            _mapper.Map(clubDto, existingClub);
-
-            _clubRepository.Update(existingClub);
-
-            await _unitOfWork.SaveAsync();
-             _logger.LogInformation("Club with ID: {ClubId} updated successfully.", id);
-        }
-
-        public async Task DeleteClubAsync(int id)
-        {
-            _logger.LogInformation("Deleting club with ID: {ClubId}", id);
-            var clubToDelete = await _clubRepository.GetByIdAsync(id);
-            if (clubToDelete == null)
-            {
-                 _logger.LogWarning("Club with ID: {ClubId} not found for deletion.", id);
-                 throw new KeyNotFoundException($"Club with ID {id} not found");
-            }
-
-            await _clubRepository.DeleteByIdAsync(id);
-
-            await _unitOfWork.SaveAsync();
-            _logger.LogInformation("Club with ID: {ClubId} deleted successfully.", id);
-        }
+        // CreateClubAsync, UpdateClubAsync, DeleteClubAsync removed as clubs are considered static.
     }
 }

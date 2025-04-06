@@ -19,6 +19,7 @@ namespace FitnessClub.BLL.Services
         ClubNotNeededForNetwork,
         UserNotFound,
         ClubNotFound,
+        AlreadyHasActiveMembership,
         UnknownError
     }
 
@@ -45,14 +46,14 @@ namespace FitnessClub.BLL.Services
 
         public async Task<IEnumerable<MembershipTypeDto>> GetAllMembershipTypesAsync()
         {
-            _logger.LogInformation("Fetching all membership types.");
+            _logger.LogDebug("Fetching all membership types.");
             var types = await _membershipTypeRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<MembershipTypeDto>>(types);
         }
 
         public async Task<MembershipPurchaseResult> PurchaseMembershipAsync(int userId, int membershipTypeId, int? clubId)
         {
-            _logger.LogInformation("Attempting purchase membership Type: {MembershipTypeId}, Club: {ClubId} for User: {UserId}",
+            _logger.LogDebug("Attempting purchase membership Type: {MembershipTypeId}, Club: {ClubId} for User: {UserId}",
                membershipTypeId, clubId?.ToString() ?? "N/A", userId);
 
             var user = await _userRepository.GetByIdAsync(userId);
@@ -60,6 +61,14 @@ namespace FitnessClub.BLL.Services
             {
                 _logger.LogWarning("Membership purchase failed: User {UserId} not found.", userId);
                 return MembershipPurchaseResult.UserNotFound;
+            }
+
+            var existingActiveMembership = await GetActiveMembershipAsync(userId);
+            if (existingActiveMembership != null)
+            {
+                _logger.LogWarning("Membership purchase failed: User {UserId} already has an active membership (ID: {ExistingMembershipId}, Ends: {EndDate})",
+                    userId, existingActiveMembership.MembershipId, existingActiveMembership.EndDate.ToString("yyyy-MM-dd"));
+                return MembershipPurchaseResult.AlreadyHasActiveMembership;
             }
 
             var membershipType = await _membershipTypeRepository.GetByIdAsync(membershipTypeId);
@@ -119,7 +128,7 @@ namespace FitnessClub.BLL.Services
 
         public async Task<MembershipDto?> GetActiveMembershipAsync(int userId)
         {
-            _logger.LogInformation("Fetching active membership for User {UserId}.", userId);
+            _logger.LogDebug("Fetching active membership for User {UserId}.", userId);
             var now = DateTime.UtcNow;
             
             _logger.LogDebug("Querying memberships for User {UserId} active on {Now}", userId, now.ToString("o"));
@@ -139,8 +148,10 @@ namespace FitnessClub.BLL.Services
                 _logger.LogInformation("No active membership found for User {UserId}.", userId);
                 return null;
             }
-
-            return _mapper.Map<MembershipDto>(latestEndingMembership)!;
+            else
+            {
+                return _mapper.Map<MembershipDto>(latestEndingMembership);
+            }
         }
     }
 }

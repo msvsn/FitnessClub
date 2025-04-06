@@ -64,30 +64,34 @@ namespace FitnessClub.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookingViewModel model)
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) 
+            {
+                _logger.LogError("Booking POST failed: User is not authenticated but accessed authorized action.");
+                return Challenge();
+            }
+
             var schedule = await _scheduleService.GetClassScheduleByIdAsync(model.ClassScheduleId);
             if (schedule == null)
             {
-                 _logger.LogError("Booking POST failed: Schedule {ScheduleId} not found.", model.ClassScheduleId);
+                 _logger.LogError("Booking POST failed: Schedule {ScheduleId} not found for User {UserId}.", model.ClassScheduleId, userId.Value);
                  ModelState.AddModelError(string.Empty, "Обране заняття більше не існує.");
-                 return View(model);
+                 return View(model); 
             }
-            model.Schedule = schedule;
+            model.Schedule = schedule; 
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Booking POST failed due to ModelState invalid for ScheduleId: {ScheduleId}", model.ClassScheduleId);
+                _logger.LogWarning("Booking POST failed due to ModelState invalid for ScheduleId: {ScheduleId}, User: {UserId}", model.ClassScheduleId, userId.Value);
                 return View(model);
             }
 
-            var userId = GetCurrentUserId();
-            string? guestName = userId.HasValue ? null : model.GuestName;
-
             try
             {
-                _logger.LogInformation("Calling BookingService.BookClassAsync for User: {UserId}, Guest: {GuestName}, ScheduleId: {ScheduleId}, Date: {ClassDate}", 
-                                         userId, guestName, model.ClassScheduleId, model.ClassDate.ToString("yyyy-MM-dd"));
+                _logger.LogInformation("Calling BookingService.BookClassAsync for User: {UserId}, ScheduleId: {ScheduleId}, Date: {ClassDate}", 
+                                         userId.Value, model.ClassScheduleId, model.ClassDate.ToString("yyyy-MM-dd"));
 
-                (BookingResult result, string? bookingId) = await _bookingService.BookClassAsync(userId, guestName, model.ClassScheduleId, model.ClassDate);
+                (BookingResult result, string? bookingId) = await _bookingService.BookClassAsync(userId.Value, model.ClassScheduleId, model.ClassDate);
 
                 _logger.LogInformation("BookingService.BookClassAsync returned: {Result}, BookingId: {BookingId}", result, bookingId);
 
@@ -103,7 +107,7 @@ namespace FitnessClub.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating booking for ScheduleId: {ScheduleId}", model.ClassScheduleId);
+                _logger.LogError(ex, "Error creating booking for ScheduleId: {ScheduleId}, User: {UserId}", model.ClassScheduleId, userId.Value);
                 ModelState.AddModelError(string.Empty, "Виникла неочікувана помилка при бронюванні.");
             }
 
@@ -165,12 +169,12 @@ namespace FitnessClub.Web.Controllers
               {
                    BookingResult.InvalidScheduleOrDate => "Недійсне заняття або вибрана дата.",
                    BookingResult.NoAvailablePlaces => "Вибачте, на це заняття немає вільних місць.",
-                   BookingResult.UserOrGuestRequired => "Потрібна інформація про користувача або гостя.",
+                   BookingResult.UserRequired => "Потрібна автентифікація користувача.",
                    BookingResult.BookingLimitExceeded => "Ви досягли ліміту активних бронювань.",
                    BookingResult.MembershipRequired => "Для бронювання потрібен активний абонемент. Будь ласка, придбайте його на сторінці Абонементи.",
                    BookingResult.MembershipClubMismatch => "Ваш поточний абонемент не дійсний для цього клубу. Будь ласка, придбайте мережевий або разовий абонемент.",
                    BookingResult.AlreadyBooked => "Ви вже записані на це заняття.",
-                   BookingResult.StrategyNotFound => "Не знайдено відповідну стратегію бронювання.",
+                   BookingResult.StrategyNotFound => "Не вдалося обробити запит бронювання (помилка конфігурації).",
                    BookingResult.UnknownError => "Сталася неочікувана помилка під час бронювання.",
                    _ => "Виникла невідома помилка при бронюванні."
               };

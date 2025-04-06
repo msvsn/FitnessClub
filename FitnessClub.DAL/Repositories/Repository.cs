@@ -51,28 +51,10 @@ namespace FitnessClub.DAL
             await _dbSet.AddAsync(entity);
         }
 
-        public virtual async Task AddRangeAsync(IEnumerable<TEntity> entities)
-        {
-             await _dbSet.AddRangeAsync(entities);
-        }
-
         public virtual void Update(TEntity entity)
         {
-            var entry = _context.Entry(entity);
-            if (entry.State == EntityState.Detached)
-            {
-                 _dbSet.Attach(entity);
-                 entry.State = EntityState.Modified;
-            }
-        }
-
-        public virtual void Delete(TEntity entity)
-        {
-            if (_context.Entry(entity).State == EntityState.Detached)
-            {
-                _dbSet.Attach(entity);
-            }
-            _dbSet.Remove(entity);
+            _dbSet.Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
         }
 
         public virtual async Task DeleteByIdAsync(int id)
@@ -80,13 +62,17 @@ namespace FitnessClub.DAL
             var entityToDelete = await _dbSet.FindAsync(id);
             if (entityToDelete != null)
             {
-                Delete(entityToDelete);
+                if (_context.Entry(entityToDelete).State == EntityState.Detached)
+                {
+                     _dbSet.Attach(entityToDelete);
+                }
+                _dbSet.Remove(entityToDelete);
             }
         }
 
         public virtual IQueryable<TEntity> Query()
         {
-            return _dbSet.AsNoTracking();
+            return _dbSet;
         }
     }
 }

@@ -32,19 +32,19 @@ namespace FitnessClub.BLL.Services
         {
             _logger.LogInformation("Attempting registration for username: {Username}", username);
             if (!ValidationHelper.IsValidName(firstName))
-                throw new ArgumentException("Invalid first name provided.", nameof(firstName));
+                throw new ArgumentException("Невірне ім'я.", nameof(firstName));
             if (!ValidationHelper.IsValidName(lastName))
-                throw new ArgumentException("Invalid last name provided.", nameof(lastName));
+                throw new ArgumentException("Невірне прізвище.", nameof(lastName));
             if (!ValidationHelper.IsValidUsername(username))
-                throw new ArgumentException("Invalid username provided.", nameof(username));
+                throw new ArgumentException("Невірне ім'я користувача.", nameof(username));
             if (!ValidationHelper.IsValidPassword(password))
-                throw new ArgumentException("Invalid password provided (minimum 6 characters required).", nameof(password));
+                throw new ArgumentException("Невірний пароль (мінімум 6 символів).", nameof(password));
 
             var existingUsers = await _userRepository.FindAsync(u => u.Username == username);
             if (existingUsers.Any())
             {
                 _logger.LogWarning("Registration failed: Username '{Username}' already exists.", username);
-                throw new InvalidOperationException("Username already exists. Please choose a different one.");
+                throw new InvalidOperationException("Ім'я користувача вже існує. Будь ласка, виберіть інше.");
             }
 
             var user = new User
@@ -64,7 +64,7 @@ namespace FitnessClub.BLL.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save new user '{Username}' to database.", username);
-                throw new Exception("An error occurred during registration. Please try again later.", ex);
+                throw new Exception("Сталася помилка під час реєстрації. Будь ласка, спробуйте ще раз пізніше.", ex);
             }
         }
 
