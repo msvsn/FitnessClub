@@ -5,6 +5,6 @@ namespace FitnessClub.Web.ViewModels
     public class UserProfileViewModel
     {
         public UserDto User { get; set; } = null!;
-        public MembershipDto? ActiveMembership { get; set; }
+        public List<MembershipDto> ActiveMemberships { get; set; } = new List<MembershipDto>();
     }
 } 

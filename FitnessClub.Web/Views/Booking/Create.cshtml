@@ -2,11 +2,9 @@
 
 @{
     ViewData["Title"] = "Бронювання заняття";
-    var classSchedule = ViewBag.ClassSchedule as FitnessClub.BLL.Dtos.ClassScheduleDto;
-    var classDate = ViewBag.ClassDate as DateTime?;
 }
 
-<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../../img/booking-bg.jpg');">
+<section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/img/booking-bg.jpg');">
     <div class="hero-content">
         <h1>Бронювання заняття</h1>
         <p>Забронюйте місце на занятті та отримайте гарантоване відвідування</p>
@@ -19,11 +17,9 @@
             <div class="card" style="padding: 30px;">
                 <h2 style="margin-bottom: 30px; text-align: center;">Бронювання заняття</h2>
                 
-                @if (ViewData.ModelState.IsValid == false)
+                @if (!ViewData.ModelState.IsValid)
                 {
-                    <div class="alert alert-danger" role="alert">
-                        <div asp-validation-summary="All"></div>
-                    </div>
+                    <div class="alert alert-danger" role="alert" asp-validation-summary="All"></div>
                 }
                 
                 @if (TempData["ErrorMessage"] != null)
@@ -62,7 +58,6 @@
                 </div>
                 
                 <form asp-action="Create">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <input type="hidden" asp-for="ClassScheduleId" />
                     <input type="hidden" asp-for="ClassDate" />
                     
@@ -71,7 +66,6 @@
                         <div class="form-group">
                             <label asp-for="GuestName" class="control-label">Ім'я гостя:</label>
                             <input asp-for="GuestName" class="form-control" placeholder="Введіть ваше ім'я"/>
-                            <span asp-validation-for="GuestName" class="text-danger"></span>
                         </div>
                     }
                     else

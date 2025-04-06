@@ -28,25 +28,15 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="MembershipTypeId" />
                     
-                    <div class="form-group mb-3">
-                        <label asp-for="ClubId" class="form-label">Виберіть клуб:</label>
-                        <select asp-for="ClubId" asp-items="Model.Clubs" class="form-control">
-                            <option value="">-- Будь ласка, оберіть клуб --</option>
-                        </select>
-                        <span asp-validation-for="ClubId" class="text-danger"></span>
-                    </div>
-                    
                     @if (Model.MembershipType != null && !Model.MembershipType.IsNetwork)
                     {
-                        <p style="margin-top: 20px;">
-                             @Model.MembershipType?.Description
-                        </p>
-                        <p>
-                             Тривалість: <strong>@Model.MembershipType?.DurationDays днів</strong>
-                        </p>
-                         <p>
-                             Ціна: <strong>@Model.MembershipType?.Price.ToString("C", new System.Globalization.CultureInfo("uk-UA"))</strong>
-                        </p>
+                        <div class="form-group mb-3">
+                            <label asp-for="ClubId" class="form-label">Виберіть клуб:</label>
+                            <select asp-for="ClubId" asp-items="Model.Clubs" class="form-control">
+                                <option value="">-- Будь ласка, оберіть клуб --</option>
+                            </select>
+                            <span asp-validation-for="ClubId" class="text-danger"></span>
+                        </div>
                     }
                     
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Придбати абонемент</button>

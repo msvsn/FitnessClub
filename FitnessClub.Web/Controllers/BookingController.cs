@@ -1,14 +1,12 @@
-using FitnessClub.BLL.Services;
-using FitnessClub.DAL.Entities;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using FitnessClub.BLL.Dtos;
+using FitnessClub.BLL.Interfaces;
+using FitnessClub.BLL.Enums;
+using FitnessClub.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using System;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
-using FitnessClub.BLL.Interfaces;
-using FitnessClub.Web.ViewModels;
 
 namespace FitnessClub.Web.Controllers
 {
@@ -17,20 +15,17 @@ namespace FitnessClub.Web.Controllers
     {
         private readonly IBookingService _bookingService;
         private readonly IClassScheduleService _scheduleService;
-        private readonly ILogger<BookingController> _logger;
 
-        public BookingController(IBookingService bookingService, IClassScheduleService scheduleService, ILogger<BookingController> logger)
+        public BookingController(IBookingService bookingService, IClassScheduleService scheduleService)
         {
             _bookingService = bookingService;
             _scheduleService = scheduleService;
-            _logger = logger;
         }
 
         public async Task<IActionResult> Create(int scheduleId, DateTime classDate)
         {
             if (classDate.Date < DateTime.Today)
             {
-                _logger.LogWarning("Attempted to book for a past date: {ClassDate}", classDate.ToString("yyyy-MM-dd"));
                 TempData["ErrorMessage"] = "Неможливо забронювати заняття на минулу дату.";
                 return RedirectToAction("Index", "Schedule");
             }
@@ -38,14 +33,12 @@ namespace FitnessClub.Web.Controllers
             var schedule = await _scheduleService.GetClassScheduleByIdAsync(scheduleId);
             if (schedule == null)
             {
-                _logger.LogWarning("Attempted to access booking creation for non-existent schedule ID: {ScheduleId}", scheduleId);
                 TempData["ErrorMessage"] = "Заняття не знайдено.";
                 return RedirectToAction("Index", "Schedule");
             }
 
             if (schedule.BookedPlaces >= schedule.Capacity)
             {
-                _logger.LogWarning("Attempted to access booking creation for full schedule ID: {ScheduleId}", scheduleId);
                 TempData["ErrorMessage"] = "На жаль, усі місця на це заняття вже заброньовані.";
                 return RedirectToAction("Index", "Schedule"); 
             }
@@ -67,14 +60,12 @@ namespace FitnessClub.Web.Controllers
             var userId = GetCurrentUserId();
             if (!userId.HasValue) 
             {
-                _logger.LogError("Booking POST failed: User is not authenticated but accessed authorized action.");
                 return Challenge();
             }
 
             var schedule = await _scheduleService.GetClassScheduleByIdAsync(model.ClassScheduleId);
             if (schedule == null)
             {
-                 _logger.LogError("Booking POST failed: Schedule {ScheduleId} not found for User {UserId}.", model.ClassScheduleId, userId.Value);
                  ModelState.AddModelError(string.Empty, "Обране заняття більше не існує.");
                  return View(model); 
             }
@@ -82,18 +73,12 @@ namespace FitnessClub.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Booking POST failed due to ModelState invalid for ScheduleId: {ScheduleId}, User: {UserId}", model.ClassScheduleId, userId.Value);
                 return View(model);
             }
 
             try
             {
-                _logger.LogInformation("Calling BookingService.BookClassAsync for User: {UserId}, ScheduleId: {ScheduleId}, Date: {ClassDate}", 
-                                         userId.Value, model.ClassScheduleId, model.ClassDate.ToString("yyyy-MM-dd"));
-
                 (BookingResult result, string? bookingId) = await _bookingService.BookClassAsync(userId.Value, model.ClassScheduleId, model.ClassDate);
-
-                _logger.LogInformation("BookingService.BookClassAsync returned: {Result}, BookingId: {BookingId}", result, bookingId);
 
                 if (result == BookingResult.Success)
                 {
@@ -105,10 +90,9 @@ namespace FitnessClub.Web.Controllers
                     ModelState.AddModelError(string.Empty, GetBookingErrorMessage(result));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating booking for ScheduleId: {ScheduleId}, User: {UserId}", model.ClassScheduleId, userId.Value);
-                ModelState.AddModelError(string.Empty, "Виникла неочікувана помилка при бронюванні.");
+                TempData["ErrorMessage"] = "Виникла непередбачена помилка при бронюванні.";
             }
 
             return View(model);
@@ -139,19 +123,14 @@ namespace FitnessClub.Web.Controllers
             try
             {
                 bool cancelled = await _bookingService.CancelBookingAsync(bookingId, userId.Value);
-                if (cancelled)
-                {
-                    TempData["SuccessMessage"] = "Booking cancelled successfully.";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Failed to cancel booking. It might not exist, belong to you, or the class has already passed.";
-                }
+
+                TempData[cancelled ? "SuccessMessage" : "ErrorMessage"] = cancelled
+                    ? "Заняття успішно скасовано."
+                    : "Не вдалося скасувати бронювання. Воно може не існувати, належати вам або заняття вже відбулося.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                 _logger.LogError(ex, "Error cancelling booking {BookingId} for user {UserId}.", bookingId, userId.Value);
-                 TempData["ErrorMessage"] = "An unexpected error occurred while cancelling the booking.";
+                TempData["ErrorMessage"] = "Виникла помилка при скасуванні бронювання.";
             }
 
             return RedirectToAction("MyBookings");
@@ -172,7 +151,7 @@ namespace FitnessClub.Web.Controllers
                    BookingResult.UserRequired => "Потрібна автентифікація користувача.",
                    BookingResult.BookingLimitExceeded => "Ви досягли ліміту активних бронювань.",
                    BookingResult.MembershipRequired => "Для бронювання потрібен активний абонемент. Будь ласка, придбайте його на сторінці Абонементи.",
-                   BookingResult.MembershipClubMismatch => "Ваш поточний абонемент не дійсний для цього клубу. Будь ласка, придбайте мережевий або разовий абонемент.",
+                   BookingResult.MembershipClubMismatch => "Ваш основний абонемент не дійсний для цього клубу. Ви можете забронювати це заняття, якщо придбаєте разовий абонемент для цього клубу.",
                    BookingResult.AlreadyBooked => "Ви вже записані на це заняття.",
                    BookingResult.StrategyNotFound => "Не вдалося обробити запит бронювання (помилка конфігурації).",
                    BookingResult.UnknownError => "Сталася неочікувана помилка під час бронювання.",

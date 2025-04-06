@@ -1,13 +1,13 @@
 @model List<FitnessClub.BLL.Dtos.BookingDto>
 @{
-    ViewData["Title"] = "My Bookings";
+    ViewData["Title"] = "Мої бронювання";
 }
 
 <section class="section">
     <div class="container">
         <div style="max-width: 900px; margin: 0 auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Мої заброньовані заняття</h2>
+                <h2>Мої бронювання</h2>
                 <a href="/Schedule" class="btn btn-outline">Знайти нові заняття</a>
             </div>
             
@@ -23,7 +23,7 @@
             @if (Model == null || !Model.Any())
             {
                 <div class="alert alert-info" role="alert">
-                    <p>У вас немає заброньованих занять.</p>
+                    <p>У вас немає бронювань.</p>
                     <p>Ви можете забронювати заняття, перейшовши до <a href="/Schedule">розкладу</a>.</p>
                 </div>
             }
@@ -38,31 +38,44 @@
                                 <th>Тип заняття</th>
                                 <th>Тренер</th>
                                 <th>Клуб</th>
-                                <th>Заброньовано</th>
+                                <th>Статус</th>
                                 <th>Дії</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var booking in Model.OrderBy(b => b.ClassDate))
+                            @foreach (var booking in Model.OrderBy(b => b.ClassDate).ThenBy(b => b.StartTime))
                             {
-                                <tr>
-                                    <td>@booking.ClassDate.ToString("yyyy-MM-dd")</td>
+                                <tr class="@(booking.IsCancelled ? "table-secondary" : (booking.ClassDate.Date < DateTime.Today ? "table-light" : ""))">
+                                    <td>@booking.ClassDate.ToString("dd.MM.yyyy")</td>
                                     <td>@booking.StartTime.ToString("hh\\:mm") - @booking.EndTime.ToString("hh\\:mm")</td>
                                     <td>@booking.ClassType</td>
                                     <td>@booking.TrainerName</td>
                                     <td>@booking.ClubName</td>
-                                    <td>@booking.BookingDate.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>
-                                        @if (booking.ClassDate.Date >= DateTime.Today)
+                                        @if(booking.IsCancelled)
                                         {
-                                            <form asp-action="Cancel" asp-controller="Booking" method="post" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                            <span class="badge bg-danger">Скасовано</span>
+                                        }
+                                        else if (booking.ClassDate.Date < DateTime.Today)
+                                        {
+                                            <span class="badge bg-secondary">Завершено</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Активне</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!booking.IsCancelled && booking.ClassDate.Date >= DateTime.Today)
+                                        {
+                                            <form asp-action="Cancel" asp-controller="Booking" method="post" onsubmit="return confirm('Ви впевнені, що хочете скасувати це бронювання?');" style="display: inline;">
                                                 <input type="hidden" name="bookingId" value="@booking.BookingId" />
                                                 <button type="submit" class="btn btn-danger btn-sm">Скасувати</button>
                                             </form>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">Завершено</span>
+                                            <span>-</span>
                                         }
                                     </td>
                                 </tr>

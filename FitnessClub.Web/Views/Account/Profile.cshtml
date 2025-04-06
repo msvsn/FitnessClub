@@ -18,27 +18,27 @@
                     
                     <div style="flex: 1; min-width: 300px;">
                         <h3 style="font-size: 1.4rem; margin-bottom: 15px;">Членство</h3>
-                        @if (Model.ActiveMembership != null)
+                        @if (Model.ActiveMemberships.Any())
                         {
-                            <div class="@(Model.ActiveMembership.EndDate < DateTime.Now ? "alert alert-danger" : "")">
-                                <p><strong>Тип:</strong> @(Model.ActiveMembership.MembershipTypeId == 1 ? "Звичайний" : "Мережевий")</p>
-                                <p><strong>Клуб:</strong> @Model.ActiveMembership.ClubName</p>
-                                <p><strong>Дійсний до:</strong> @Model.ActiveMembership.EndDate.ToString("dd.MM.yyyy")</p>
-                                
-                                @if (Model.ActiveMembership.IsExpired)
+                            <h4>Ваші активні абонементи:</h4>
+                            <ul>
+                                @foreach (var membership in Model.ActiveMemberships)
                                 {
-                                    <p style="color: #dc3545; margin-top: 10px;">Ваш абонемент закінчився. Придбайте новий для отримання послуг.</p>
+                                    <li>
+                                        <strong>@membership.MembershipTypeName</strong>
+                                        @if (!string.IsNullOrEmpty(membership.ClubName))
+                                        {
+                                            <span>(Клуб: @membership.ClubName)</span>
+                                        }
+                                        <span> - Дійсний до: @membership.EndDate.ToString("dd.MM.yyyy")</span>
+                                    </li>
                                 }
-                                else if (Model.ActiveMembership.RemainingDays.HasValue)
-                                {
-                                    <p><strong>Залишилось днів:</strong> @Model.ActiveMembership.RemainingDays</p>
-                                }
-                            </div>
+                            </ul>
                         }
                         else
                         {
                             <div class="alert alert-info">
-                                <p>У вас немає активного абонементу.</p>
+                                <p>У вас немає активних абонементів.</p>
                                 <p>Придбайте абонемент для відвідування занять та користування клубом.</p>
                             </div>
                         }
