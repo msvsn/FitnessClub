@@ -38,12 +38,66 @@ namespace FitnessClub.BLL.Services
 
         public async Task<MembershipPurchaseResult> PurchaseMembershipAsync(int userId, int membershipTypeId, int? clubId)
         {
+            var (membershipType, validationResult) = await ValidateMembershipTypeAsync(membershipTypeId);
+            if (validationResult.HasValue) return validationResult.Value;
+            validationResult = await ValidateOneTimePassConflictAsync(userId, membershipType!);
+            if (validationResult.HasValue) return validationResult.Value;
+            validationResult = await ValidateUserExistsAsync(userId);
+            if (validationResult.HasValue) return validationResult.Value;
+            validationResult = await ValidateExistingMembershipConflictAsync(userId, membershipType!);
+            if (validationResult.HasValue) return validationResult.Value;
+            validationResult = await ValidateClubSelectionAsync(membershipType!, clubId);
+            if (validationResult.HasValue) return validationResult.Value;
+            return await CreateAndSaveMembershipAsync(userId, membershipType!, clubId);
+        }
+
+        public async Task<MembershipDto?> GetActiveMembershipAsync(int userId)
+        {
+            var activeMemberships = await GetActiveMembershipsBaseQueryAsync(userId);
+
+            var latestEndingMembership = activeMemberships
+                .Where(m => m.MembershipType != null && !m.MembershipType.IsOneTimePass) 
+                .OrderByDescending(m => m.EndDate)
+                .FirstOrDefault();
+            return latestEndingMembership == null ? null : _mapper.Map<MembershipDto>(latestEndingMembership);
+        }
+
+        public async Task<MembershipDto?> GetActiveOneTimePassAsync(int userId)
+        {
+            var activeMemberships = await GetActiveMembershipsBaseQueryAsync(userId);
+
+            var latestEndingOneTimePass = activeMemberships
+                .Where(m => m.MembershipType != null && m.MembershipType.IsOneTimePass)
+                .OrderByDescending(m => m.EndDate)
+                .FirstOrDefault();
+             return latestEndingOneTimePass == null ? null : _mapper.Map<MembershipDto>(latestEndingOneTimePass);
+        }
+
+        public async Task<List<MembershipDto>> GetAllActiveMembershipsAsync(int userId)
+        {
+            var activeMemberships = await GetActiveMembershipsBaseQueryAsync(userId);
+            
+            var sortedMemberships = activeMemberships.OrderBy(m => m.EndDate).ToList();
+
+            return _mapper.Map<List<MembershipDto>>(sortedMemberships);
+        }
+
+        public async Task ConsumeOneTimePassAsync(int membershipId)
+        {
+            await _membershipRepository.DeleteByIdAsync(membershipId);
+        }
+        private async Task<(MembershipType? Type, MembershipPurchaseResult? Result)> ValidateMembershipTypeAsync(int membershipTypeId)
+        {
             var membershipType = await _membershipTypeRepository.GetByIdAsync(membershipTypeId);
             if (membershipType == null)
             {
-                return MembershipPurchaseResult.InvalidMembershipType;
+                return (null, MembershipPurchaseResult.InvalidMembershipType);
             }
+            return (membershipType, null);
+        }
 
+        private async Task<MembershipPurchaseResult?> ValidateOneTimePassConflictAsync(int userId, MembershipType membershipType)
+        {
             if (membershipType.IsOneTimePass)
             {
                 var existingOneTimePass = await GetActiveOneTimePassAsync(userId);
@@ -52,25 +106,39 @@ namespace FitnessClub.BLL.Services
                     return MembershipPurchaseResult.AlreadyHasActiveOneTimePass;
                 }
             }
+            return null;
+        }
 
+        private async Task<MembershipPurchaseResult?> ValidateUserExistsAsync(int userId)
+        {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return MembershipPurchaseResult.UserNotFound;
             }
+            return null;
+        }
 
+        private async Task<MembershipPurchaseResult?> ValidateExistingMembershipConflictAsync(int userId, MembershipType newMembershipType)
+        {
             var existingActiveMembership = await GetActiveMembershipAsync(userId);
             
-            if (existingActiveMembership != null && existingActiveMembership.IsNetworkMembership)
+            if (existingActiveMembership != null)
             {
-                return MembershipPurchaseResult.CannotPurchaseWithNetwork;
+                if (existingActiveMembership.IsNetworkMembership) 
+                {
+                     return MembershipPurchaseResult.CannotPurchaseWithNetwork;
+                }
+                if (!newMembershipType.IsOneTimePass)
+                {
+                     return MembershipPurchaseResult.AlreadyHasActiveMembership;
+                }
             }
+            return null;
+        }
 
-            if (existingActiveMembership != null && !membershipType.IsOneTimePass)
-            {
-                return MembershipPurchaseResult.AlreadyHasActiveMembership;
-            }
-
+        private async Task<MembershipPurchaseResult?> ValidateClubSelectionAsync(MembershipType membershipType, int? clubId)
+        {
             if (!membershipType.IsNetwork)
             {
                 if (!clubId.HasValue)
@@ -87,14 +155,18 @@ namespace FitnessClub.BLL.Services
             {
                 return MembershipPurchaseResult.ClubNotNeededForNetwork;
             }
+            return null;
+        }
 
-            var startDate = DateTime.UtcNow;
+        private async Task<MembershipPurchaseResult> CreateAndSaveMembershipAsync(int userId, MembershipType membershipType, int? clubId)
+        {
+             var startDate = DateTime.UtcNow;
             var endDate = startDate.AddDays(membershipType.DurationDays);
 
             var membership = new Membership
             {
                 UserId = userId,
-                MembershipTypeId = membershipTypeId,
+                MembershipTypeId = membershipType.MembershipTypeId,
                 ClubId = membershipType.IsNetwork ? null : clubId,
                 StartDate = startDate,
                 EndDate = endDate
@@ -112,71 +184,15 @@ namespace FitnessClub.BLL.Services
             }
         }
 
-        public async Task<MembershipDto?> GetActiveMembershipAsync(int userId)
+
+        private async Task<IEnumerable<Membership>> GetActiveMembershipsBaseQueryAsync(int userId)
         {
             var now = DateTime.UtcNow;
-            
-            var memberships = await _membershipRepository.FindAsync(
-                m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
-                m => m.Club,
-                m => m.MembershipType
+            return await _membershipRepository.FindAsync(
+                 m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
+                 m => m.Club,
+                 m => m.MembershipType
             );
-            
-            var latestEndingMembership = memberships.OrderByDescending(m => m.EndDate).FirstOrDefault();
-
-            if (latestEndingMembership == null)
-            {
-                return null;
-            }
-            else
-            {
-                return _mapper.Map<MembershipDto>(latestEndingMembership);
-            }
-        }
-
-        public async Task<MembershipDto?> GetActiveOneTimePassAsync(int userId)
-        {
-            var now = DateTime.UtcNow;
-
-            var oneTimePasses = await _membershipRepository.FindAsync(
-                m => m.UserId == userId &&
-                     m.StartDate <= now &&
-                     m.EndDate >= now &&
-                     m.MembershipType.IsOneTimePass,
-                m => m.MembershipType,
-                m => m.Club
-            );
-
-            var latestEndingOneTimePass = oneTimePasses.OrderByDescending(m => m.EndDate).FirstOrDefault();
-
-            if (latestEndingOneTimePass == null)
-            {
-                return null;
-            }
-            else
-            {
-                return _mapper.Map<MembershipDto>(latestEndingOneTimePass);
-            }
-        }
-
-        public async Task<List<MembershipDto>> GetAllActiveMembershipsAsync(int userId)
-        {
-            var now = DateTime.UtcNow;
-            
-            var activeMemberships = await _membershipRepository.FindAsync(
-                m => m.UserId == userId && m.StartDate <= now && m.EndDate >= now,
-                m => m.Club,
-                m => m.MembershipType
-            );
-            
-            var sortedMemberships = activeMemberships.OrderBy(m => m.EndDate).ToList();
-
-            return _mapper.Map<List<MembershipDto>>(sortedMemberships);
-        }
-
-        public async Task ConsumeOneTimePassAsync(int membershipId)
-        {
-            await _membershipRepository.DeleteByIdAsync(membershipId);
         }
     }
 }

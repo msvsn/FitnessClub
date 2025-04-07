@@ -12,26 +12,12 @@ namespace FitnessClub.BLL
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        private static T GetRequiredConfigValue<T>(string key) where T : IParsable<T>
+        private static T GetRequiredConfigValue<T>(string key, Func<string, T> parser)
         {
             var value = _configuration?[key];
             if (string.IsNullOrEmpty(value))
             {
-                throw new InvalidOperationException($"Configuration value for '{key}' is missing or empty.");
-            }
-            if (T.TryParse(value, null, out var result))
-            {
-                return result;
-            }
-            throw new InvalidOperationException($"Configuration value for '{key}' ('{value}') could not be parsed as {typeof(T).Name}.");
-        }
-
-         private static T GetRequiredConfigValue<T>(string key, Func<string, T> parser)
-        {
-            var value = _configuration?[key];
-            if (string.IsNullOrEmpty(value))
-            {
-                throw new InvalidOperationException($"Configuration value for '{key}' is missing or empty.");
+                throw new InvalidOperationException($"Конфігураційне значення для '{key}' відсутнє або порожнє.");
             }
             try
             {
@@ -39,7 +25,7 @@ namespace FitnessClub.BLL
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Configuration value for '{key}' ('{value}') could not be parsed as {typeof(T).Name}.", ex);
+                throw new InvalidOperationException($"Конфігураційне значення для '{key}' ('{value}') не може бути розпізнано як {typeof(T).Name}.", ex);
             }
         }
 
@@ -67,19 +53,6 @@ namespace FitnessClub.BLL
         {
             public static int MaxBookingsPerUser => GetRequiredConfigValue<int>("BookingSettings:MaxBookingsPerUser", int.Parse);
             public static int BookingWindowDays => GetRequiredConfigValue<int>("BookingSettings:BookingWindowDays", int.Parse);
-        }
-
-        public static class ClassTypes
-        {
-            public static readonly string[] AllTypes = new[]
-            {
-                "Йога",
-                "Пілатес",
-                "Бокс",
-                "Розтяжка",
-                "Фітнес",
-                "Кросфіт"
-            };
         }
     }
 }

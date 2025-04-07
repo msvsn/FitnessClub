@@ -50,5 +50,24 @@ namespace FitnessClub.BLL.Services
             }
             return _mapper.Map<ClassScheduleDto>(schedule);
         }
+
+        public async Task<ClassScheduleDto?> GetAndValidateClassScheduleAsync(int classScheduleId, DateTime classDate)
+        {
+            var schedules = await _scheduleRepository.FindAsync(
+                cs => cs.ClassScheduleId == classScheduleId,
+                cs => cs.Club
+            );
+            var classSchedule = schedules.FirstOrDefault();
+
+            if (classSchedule == null) return null;
+
+            var classDateOnly = classDate.Date;
+            if (classDateOnly.DayOfWeek != classSchedule.DayOfWeek || classDateOnly < DateTime.Today)
+            {
+                return null;
+            }
+
+            return _mapper.Map<ClassScheduleDto>(classSchedule);
+        }
     }
 }

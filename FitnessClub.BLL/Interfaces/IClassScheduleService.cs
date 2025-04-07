@@ -9,5 +9,6 @@ namespace FitnessClub.BLL.Interfaces
     {
         Task<IEnumerable<ClassScheduleDto>> GetSchedulesByClubAndDateAsync(int clubId, DateTime date);
         Task<ClassScheduleDto?> GetClassScheduleByIdAsync(int id);
+        Task<ClassScheduleDto?> GetAndValidateClassScheduleAsync(int classScheduleId, DateTime classDate);
     }
 }
