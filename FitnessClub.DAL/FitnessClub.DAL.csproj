@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../FitnessClub.Core.Abstractions/FitnessClub.Core.Abstractions.csproj" />
+    <ProjectReference Include="../FitnessClub.Entities/FitnessClub.Entities.csproj" />
   </ItemGroup>
 
 </Project>

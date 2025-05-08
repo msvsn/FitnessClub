@@ -1,6 +1,6 @@
 using AutoMapper;
 using FitnessClub.BLL.Dtos;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 
 namespace FitnessClub.BLL.AutoMapping
 {

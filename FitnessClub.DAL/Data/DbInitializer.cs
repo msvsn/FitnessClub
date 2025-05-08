@@ -1,4 +1,4 @@
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

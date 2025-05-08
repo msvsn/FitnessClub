@@ -1,4 +1,4 @@
-namespace FitnessClub.DAL.Entities
+namespace FitnessClub.Entities
 {
     public class Trainer
     {
@@ -9,4 +9,4 @@ namespace FitnessClub.DAL.Entities
         public int ClubId { get; set; }
         public virtual Club Club { get; set; } = null!;
     }
-}
+} 

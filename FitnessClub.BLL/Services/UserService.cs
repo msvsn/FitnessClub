@@ -6,7 +6,7 @@ using FitnessClub.BLL.Dtos;
 using FitnessClub.BLL.Helpers;
 using FitnessClub.BLL.Interfaces;
 using FitnessClub.Core.Abstractions;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 
 namespace FitnessClub.BLL.Services
 {

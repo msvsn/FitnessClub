@@ -1,5 +1,5 @@
 using FitnessClub.BLL.Services;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 using FitnessClub.BLL.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

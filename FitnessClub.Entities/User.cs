@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FitnessClub.DAL.Entities
+namespace FitnessClub.Entities
 {
     public class User
     {
@@ -13,4 +13,4 @@ namespace FitnessClub.DAL.Entities
         public virtual ICollection<Membership> Memberships { get; set; } = new List<Membership>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
-}
+} 

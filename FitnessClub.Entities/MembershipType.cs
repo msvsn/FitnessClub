@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FitnessClub.DAL.Entities
+namespace FitnessClub.Entities
 {
     public class MembershipType
     {
@@ -12,4 +12,4 @@ namespace FitnessClub.DAL.Entities
         public bool IsSingleVisit { get; set; }
         public virtual ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     }
-}
+} 

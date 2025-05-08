@@ -1,5 +1,5 @@
 using System;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 using FitnessClub.Core.Abstractions;
 
 namespace FitnessClub.BLL.Interfaces

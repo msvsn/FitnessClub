@@ -1,6 +1,6 @@
 using System;
 
-namespace FitnessClub.DAL.Entities
+namespace FitnessClub.Entities
 {
     public class Booking
     {
@@ -14,4 +14,4 @@ namespace FitnessClub.DAL.Entities
         public DateTime BookingDate { get; set; }
         public bool IsMembershipBooking { get; set; }
     }
-}
+} 

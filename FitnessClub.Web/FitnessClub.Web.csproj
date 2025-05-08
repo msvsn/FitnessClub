@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FitnessClub.BLL\FitnessClub.BLL.csproj" />
+    <ProjectReference Include="..\FitnessClub.Entities\FitnessClub.Entities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

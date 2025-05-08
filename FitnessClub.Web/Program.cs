@@ -3,11 +3,11 @@ using FitnessClub.BLL.Interfaces;
 using FitnessClub.BLL.Services;
 using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL;
-using FitnessClub.DAL.Entities;
 using FitnessClub.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using FitnessClub.BLL;
+using FitnessClub.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();

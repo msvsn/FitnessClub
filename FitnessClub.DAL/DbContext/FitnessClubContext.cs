@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 
 namespace FitnessClub.DAL
 {

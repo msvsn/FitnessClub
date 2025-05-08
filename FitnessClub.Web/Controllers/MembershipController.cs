@@ -33,7 +33,7 @@ namespace FitnessClub.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var membershipTypes = await _unitOfWork.GetRepository<FitnessClub.DAL.Entities.MembershipType>().GetAllAsync();
+            var membershipTypes = await _unitOfWork.GetRepository<FitnessClub.Entities.MembershipType>().GetAllAsync();
             var membershipTypeDtos = _mapper.Map<IEnumerable<MembershipTypeDto>>(membershipTypes);
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

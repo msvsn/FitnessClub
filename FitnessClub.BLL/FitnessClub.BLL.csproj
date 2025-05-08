@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FitnessClub.DAL\FitnessClub.DAL.csproj" />
     <ProjectReference Include="../FitnessClub.Core.Abstractions/FitnessClub.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\FitnessClub.Entities\FitnessClub.Entities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

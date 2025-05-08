@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FitnessClub.DAL.Entities
+namespace FitnessClub.Entities
 {
     public class Membership
     {
@@ -16,4 +16,4 @@ namespace FitnessClub.DAL.Entities
         public DateTime EndDate { get; set; }
         public bool IsUsed { get; set; }
     }
-}
+} 

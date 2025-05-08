@@ -2,7 +2,7 @@ using AutoMapper;
 using FitnessClub.BLL.Dtos;
 using FitnessClub.BLL.Interfaces;
 using FitnessClub.Core.Abstractions;
-using FitnessClub.DAL.Entities;
+using FitnessClub.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
