@@ -3,7 +3,6 @@ using FitnessClub.BLL.Dtos;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using FitnessClub.Web.ViewModels;
-using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Security.Claims;
@@ -13,6 +12,7 @@ using FitnessClub.BLL.Services;
 using System.Collections.Generic;
 using AutoMapper;
 using FitnessClub.Core.Abstractions;
+using FitnessClub.BLL.Enums;
 
 namespace FitnessClub.Web.Controllers
 {
@@ -20,15 +20,13 @@ namespace FitnessClub.Web.Controllers
     {
         private readonly IMembershipService _membershipService;
         private readonly IClubService _clubService;
-        private readonly ILogger<MembershipController> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public MembershipController(IMembershipService membershipService, IClubService clubService, ILogger<MembershipController> logger, IUnitOfWork unitOfWork, IMapper mapper)
+        public MembershipController(IMembershipService membershipService, IClubService clubService, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _membershipService = membershipService;
             _clubService = clubService;
-            _logger = logger;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -64,9 +62,8 @@ namespace FitnessClub.Web.Controllers
 
         public async Task<IActionResult> Purchase(int id)
         {
-            if (!User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated != true)
             {
-                _logger.LogWarning("Unauthorized attempt to access membership purchase page.");
                 TempData["ErrorMessage"] = "Для придбання абонементу необхідно спочатку увійти в систему";
                 return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Purchase", "Membership", new { id }) });
             }
@@ -75,7 +72,6 @@ namespace FitnessClub.Web.Controllers
 
             if (membershipType == null)
             {
-                _logger.LogWarning("Attempted to purchase non-existent MembershipType ID: {MembershipTypeId}", id);
                 TempData["ErrorMessage"] = "Вибраний тип абонементу не знайдено.";
                 return RedirectToAction("Index");
             }
@@ -87,7 +83,7 @@ namespace FitnessClub.Web.Controllers
                 Clubs = null
             };
 
-            if (!membershipType.IsNetwork)
+            if (membershipType != null && !membershipType.IsSingleVisit && !membershipType.IsNetwork)
             {
                 var clubs = await _clubService.GetAllClubsAsync();
                 viewModel.Clubs = new SelectList(clubs, "ClubId", "Name");
@@ -103,36 +99,19 @@ namespace FitnessClub.Web.Controllers
             var userId = GetCurrentUserId();
             if (userId == null)
             {
-                 _logger.LogError("Purchase POST failed: User ID is null, but user should be authenticated.");
                  return Unauthorized();
             }
 
-            var activeMembership = await _membershipService.GetActiveMembershipAsync(userId.Value);
-            if (activeMembership != null)
-            {
-                 _logger.LogWarning("User {UserId} attempted to purchase a membership but already has an active one (ID: {ActiveMembershipId}).", userId.Value, activeMembership.MembershipId);
-                ModelState.AddModelError(string.Empty, "Ви вже маєте активний абонемент.");
-
-                await PopulateViewModelForError(model);
-                return View(model);
-            }
-            
             if (!ModelState.IsValid)
             {
-                 _logger.LogWarning("Purchase POST failed due to ModelState invalid for User: {UserId}", userId.Value);
                  await PopulateViewModelForError(model);
                  return View(model);
             }
 
             try
             {
-                _logger.LogInformation("Calling MembershipService.PurchaseMembershipAsync for User: {UserId}, MembershipTypeId: {MembershipTypeId}, ClubId: {ClubId}", 
-                                         userId.Value, model.MembershipTypeId, model.ClubId);
-
                 var result = await _membershipService.PurchaseMembershipAsync(userId.Value, model.MembershipTypeId, model.ClubId);
                 
-                _logger.LogInformation("MembershipService.PurchaseMembershipAsync returned: {Result}", result);
-
                 if (result == MembershipPurchaseResult.Success)
                 {
                     TempData["SuccessMessage"] = "Абонемент успішно придбано!";
@@ -143,10 +122,9 @@ namespace FitnessClub.Web.Controllers
                     ModelState.AddModelError(string.Empty, GetErrorMessageForResult(result));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error purchasing membership for User: {UserId}, MembershipType: {MembershipTypeId}", userId.Value, model.MembershipTypeId);
-                ModelState.AddModelError(string.Empty, "An unexpected error occurred.");
+                ModelState.AddModelError(string.Empty, "Виникла невідома помилка при придбанні абонементу");
             }
 
             await PopulateViewModelForError(model);
@@ -172,10 +150,16 @@ namespace FitnessClub.Web.Controllers
             return result switch
             {
                 MembershipPurchaseResult.InvalidMembershipType => "Невірний тип абонементу",
-                MembershipPurchaseResult.ClubRequiredForSingleClub => "Для абонементу одного клубу потрібно вибрати клуб",
+                MembershipPurchaseResult.ClubRequiredForSingleClub => "Для цього типу абонементу потрібно вибрати клуб",
                 MembershipPurchaseResult.ClubNotNeededForNetwork => "Для мережевого абонементу не потрібно вибирати конкретний клуб",
                 MembershipPurchaseResult.UserNotFound => "Користувач не знайдений",
                 MembershipPurchaseResult.ClubNotFound => "Вибраний клуб не знайдений",
+                MembershipPurchaseResult.AlreadyHasActiveMainMembership => "Ви вже маєте активний основний абонемент.",
+                MembershipPurchaseResult.NetworkMembershipConflict => "Неможливо придбати одноразовий абонемент, маючи активний мережевий абонемент.",
+                MembershipPurchaseResult.SameClubSingleVisitConflict => "Неможливо придбати одноразовий абонемент для клубу, де у вас вже є активний основний абонемент.",
+                MembershipPurchaseResult.ClubRequiredForSingleVisit => "Для одноразового абонементу необхідно вибрати клуб.",
+                MembershipPurchaseResult.NetworkMembershipIsExclusive => "Мережевий абонемент не може існувати одночасно з іншими абонементами, або ви намагаєтесь придбати не мережевий абонемент, маючи активний мережевий.",
+                MembershipPurchaseResult.AlreadyHasActiveSingleVisitMembership => "Ви вже маєте активний разовий абонемент. Дозволено лише один активний разовий абонемент.",
                 MembershipPurchaseResult.UnknownError => "Виникла невідома помилка",
                 _ => "Виникла помилка при придбанні абонементу"
             };

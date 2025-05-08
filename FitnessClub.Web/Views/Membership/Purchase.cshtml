@@ -28,13 +28,16 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="MembershipTypeId" />
                     
-                    <div class="form-group mb-3">
-                        <label asp-for="ClubId" class="form-label">Виберіть клуб:</label>
-                        <select asp-for="ClubId" asp-items="Model.Clubs" class="form-control">
-                            <option value="">-- Будь ласка, оберіть клуб --</option>
-                        </select>
-                        <span asp-validation-for="ClubId" class="text-danger"></span>
-                    </div>
+                    @if (Model.Clubs != null)
+                    {
+                        <div class="form-group mb-3">
+                            <label asp-for="ClubId" class="form-label">Виберіть клуб:</label>
+                            <select asp-for="ClubId" asp-items="Model.Clubs" class="form-control">
+                                <option value="">-- Будь ласка, оберіть клуб --</option>
+                            </select>
+                            <span asp-validation-for="ClubId" class="text-danger"></span>
+                        </div>
+                    }
                     
                     @if (Model.MembershipType != null && !Model.MembershipType.IsNetwork)
                     {

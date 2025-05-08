@@ -8,5 +8,8 @@ namespace FitnessClub.BLL.Interfaces
     {
         Task<IEnumerable<ClubDto>> GetAllClubsAsync();
         Task<ClubDto?> GetClubByIdAsync(int id);
+        Task<ClubDto> CreateClubAsync(ClubDto clubDto);
+        Task<bool> UpdateClubAsync(int clubId, ClubDto clubDto);
+        Task<bool> DeleteClubAsync(int clubId);
     }
 }

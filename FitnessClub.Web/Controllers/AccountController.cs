@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FitnessClub.BLL.Interfaces;
@@ -21,14 +20,12 @@ namespace FitnessClub.Web.Controllers
         private readonly IUserService _userService;
         private readonly IMembershipService _membershipService;
         private readonly IMapper _mapper;
-        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IUserService userService, IMembershipService membershipService, IMapper mapper, ILogger<AccountController> logger)
+        public AccountController(IUserService userService, IMembershipService membershipService, IMapper mapper)
         {
             _userService = userService;
             _membershipService = membershipService;
             _mapper = mapper;
-            _logger = logger;
         }
 
         [HttpGet]
@@ -59,9 +56,8 @@ namespace FitnessClub.Web.Controllers
                 {
                     ModelState.AddModelError(string.Empty, ex.Message);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogError(ex, "Error during registration.");
                     ModelState.AddModelError(string.Empty, "An unexpected error occurred during registration.");
                 }
             }
@@ -104,24 +100,23 @@ namespace FitnessClub.Web.Controllers
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out var userId))
             {
-                _logger.LogWarning("Could not parse UserId from claims.");
                  return Challenge();
             }
 
             var user = await _userService.GetUserByIdAsync(userId);
-            var membership = await _membershipService.GetActiveMembershipAsync(userId);
+            var allMemberships = await _membershipService.GetAllUserMembershipsAsync(userId);
+
+            if (user == null)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToAction("Login");
+            }
 
             var profileViewModel = new UserProfileViewModel
             {
-                User = user!,
-                ActiveMembership = membership
+                User = user,
+                Memberships = allMemberships
             };
-
-            if (profileViewModel.User == null)
-            {
-                _logger.LogWarning("User data not found for logged in user ID: {UserId}", userId);
-                return RedirectToAction("Login");
-            }
 
             return View(profileViewModel);
         }

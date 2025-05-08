@@ -5,7 +5,6 @@ using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL;
 using FitnessClub.DAL.Entities;
 using FitnessClub.DAL.Data;
-using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using FitnessClub.BLL;
@@ -36,7 +35,6 @@ builder.Services.AddScoped<IClassScheduleService, ClassScheduleService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingStrategy, MembershipBookingStrategy>();
 builder.Services.AddScoped<IBookingStrategy, GuestBookingStrategy>();
-builder.Services.AddLogging();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -74,26 +72,25 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var configuration = services.GetRequiredService<IConfiguration>();
-    var logger = services.GetRequiredService<ILogger<FitnessClubContext>>();
     try
     {
-        await DbInitializer.InitializeAsync(services, configuration, logger);
+        await DbInitializer.InitializeAsync(services, configuration);
     }
     catch (Exception ex)
     {
-        var initLogger = services.GetRequiredService<ILogger<Program>>();
-        initLogger.LogError(ex, "An error occurred during database initialization.");
+        Console.WriteLine($"Critical error during database initialization: {ex.Message}");
+        throw;
     }
 }
 
 try
 {
     AppSettings.Initialize(app.Configuration);
-    app.Logger.LogInformation("AppSettings initialized successfully.");
 }
 catch(Exception ex)
 {
-    app.Logger.LogCritical(ex, "Failed to initialize AppSettings.");
+    Console.WriteLine($"Critical error during AppSettings initialization: {ex.Message}");
+    throw;
 }
 
 app.Run();

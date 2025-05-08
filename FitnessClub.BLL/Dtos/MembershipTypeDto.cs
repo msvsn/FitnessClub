@@ -8,5 +8,6 @@ namespace FitnessClub.BLL.Dtos
         public int DurationDays { get; set; }
         public bool IsNetwork { get; set; }
         public string? Description { get; set; }
+        public bool IsSingleVisit { get; set; }
     }
 }

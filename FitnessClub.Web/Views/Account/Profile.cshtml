@@ -18,22 +18,36 @@
                     
                     <div style="flex: 1; min-width: 300px;">
                         <h3 style="font-size: 1.4rem; margin-bottom: 15px;">Членство</h3>
-                        @if (Model.ActiveMembership != null)
+                        @if (Model.Memberships != null && Model.Memberships.Any())
                         {
-                            <div class="@(Model.ActiveMembership.EndDate < DateTime.Now ? "alert alert-danger" : "")">
-                                <p><strong>Тип:</strong> @(Model.ActiveMembership.MembershipTypeId == 1 ? "Звичайний" : "Мережевий")</p>
-                                <p><strong>Клуб:</strong> @Model.ActiveMembership.ClubName</p>
-                                <p><strong>Дійсний до:</strong> @Model.ActiveMembership.EndDate.ToString("dd.MM.yyyy")</p>
+                            @foreach (var membership in Model.Memberships.OrderByDescending(m => m.EndDate))
+                            {
+                                bool isExpired = membership.EndDate < DateTime.Now;
+                                bool isUsedSingleVisit = membership.IsSingleVisit && membership.IsUsed;
+                                string statusClass = isExpired || isUsedSingleVisit ? "alert alert-secondary text-muted" : "alert alert-success"; // Use different styling for inactive/used
                                 
-                                @if (Model.ActiveMembership.IsExpired)
-                                {
-                                    <p style="color: #dc3545; margin-top: 10px;">Ваш абонемент закінчився. Придбайте новий для отримання послуг.</p>
-                                }
-                                else if (Model.ActiveMembership.RemainingDays.HasValue)
-                                {
-                                    <p><strong>Залишилось днів:</strong> @Model.ActiveMembership.RemainingDays</p>
-                                }
-                            </div>
+                                <div class="@statusClass mb-3">
+                                    <p style="margin-bottom: 5px;"><strong>Тип:</strong> @membership.MembershipTypeName @(membership.IsSingleVisit ? "(разовий)" : "")</p>
+                                    @if (!membership.IsNetworkMembership && !string.IsNullOrEmpty(membership.ClubName))
+                                    {
+                                        <p style="margin-bottom: 5px;"><strong>Клуб:</strong> @membership.ClubName</p>
+                                    }
+                                    <p style="margin-bottom: 5px;"><strong>Дійсний до:</strong> @membership.EndDate.ToString("dd.MM.yyyy")</p>
+                                    
+                                    @if (isUsedSingleVisit)
+                                    {
+                                        <p style="font-style: italic; margin-top: 5px;">Статус: Використаний</p>
+                                    }
+                                    else if (isExpired)
+                                    {
+                                        <p style="font-style: italic; margin-top: 5px;">Статус: Закінчився</p>
+                                    }
+                                    else if (membership.RemainingDays.HasValue)
+                                    {
+                                        <p style="margin-bottom: 0;"><strong>Залишилось днів:</strong> @membership.RemainingDays</p>
+                                    }
+                                </div>
+                            } 
                         }
                         else
                         {

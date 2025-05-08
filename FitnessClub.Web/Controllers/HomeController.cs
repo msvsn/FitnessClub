@@ -2,7 +2,6 @@ using FitnessClub.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using FitnessClub.BLL.Interfaces;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Diagnostics;
 
@@ -10,13 +9,11 @@ namespace FitnessClub.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly IClubService _clubService;
         private readonly ITrainerService _trainerService;
 
-        public HomeController(ILogger<HomeController> logger, IClubService clubService, ITrainerService trainerService)
+        public HomeController(IClubService clubService, ITrainerService trainerService)
         {
-            _logger = logger;
             _clubService = clubService;
             _trainerService = trainerService;
         }

@@ -3,8 +3,9 @@ using FitnessClub.BLL.Dtos;
 using FitnessClub.BLL.Interfaces;
 using FitnessClub.Core.Abstractions;
 using FitnessClub.DAL.Entities;
-using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FitnessClub.BLL.Services
@@ -13,33 +14,26 @@ namespace FitnessClub.BLL.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly ILogger<ClubService> _logger;
         private readonly IRepository<Club> _clubRepository;
 
-        public ClubService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ClubService> logger)
+        public ClubService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _clubRepository = _unitOfWork.GetRepository<Club>();
         }
 
         public async Task<IEnumerable<ClubDto>> GetAllClubsAsync()
         {
-            _logger.LogInformation("Fetching all clubs.");
             var clubs = await _clubRepository.GetAllAsync();
-            _logger.LogInformation("Retrieved {ClubCount} clubs from repository.", clubs.Count());
             return _mapper.Map<IEnumerable<ClubDto>>(clubs);
         }
 
         public async Task<ClubDto?> GetClubByIdAsync(int id)
         {
-            _logger.LogInformation("Fetching club by ID: {ClubId}", id);
             var club = await _clubRepository.GetByIdAsync(id);
-
             if (club == null)
             {
-                _logger.LogWarning("Club with ID: {ClubId} not found.", id);
                 return null;
             }
             return _mapper.Map<ClubDto>(club);
@@ -47,66 +41,61 @@ namespace FitnessClub.BLL.Services
 
         public async Task<ClubDto> CreateClubAsync(ClubDto clubDto)
         {
-            _logger.LogInformation("Creating a new club: {ClubName}", clubDto.Name);
             if (clubDto == null) 
             { 
-                 _logger.LogError("Club DTO is null.");
                  throw new ArgumentNullException(nameof(clubDto));
             } 
-
             var clubEntity = _mapper.Map<Club>(clubDto);
-
             await _clubRepository.AddAsync(clubEntity);
-
             await _unitOfWork.SaveAsync();
-            _logger.LogInformation("Club created successfully with ID: {ClubId}", clubEntity.ClubId);
-
-            return _mapper.Map<ClubDto>(clubEntity);
+            return _mapper.Map<ClubDto>(clubEntity); 
         }
 
-        public async Task UpdateClubAsync(int id, ClubDto clubDto)
+        public async Task<bool> UpdateClubAsync(int id, ClubDto clubDto)
         {
-             _logger.LogInformation("Updating club with ID: {ClubId}", id);
-             if (id != clubDto.ClubId)
-            {
-                _logger.LogError("Club ID mismatch in update request.");
-                throw new ArgumentException("ID mismatch");
-            }
              if (clubDto == null)
             { 
-                 _logger.LogError("Club DTO is null for update.");
                  throw new ArgumentNullException(nameof(clubDto));
             } 
-
+             if (id != clubDto.ClubId)
+            {
+                 throw new ArgumentException("Не збігаються ID клубу");
+            }
             var existingClub = await _clubRepository.GetByIdAsync(id);
             if (existingClub == null)
             {
-                _logger.LogWarning("Club with ID: {ClubId} not found for update.", id);
-                throw new KeyNotFoundException($"Club with ID {id} not found");
+                return false;
             }
-
             _mapper.Map(clubDto, existingClub);
-
             _clubRepository.Update(existingClub);
-
-            await _unitOfWork.SaveAsync();
-             _logger.LogInformation("Club with ID: {ClubId} updated successfully.", id);
+            try
+            {
+                await _unitOfWork.SaveAsync();
+                return true; 
+            }
+            catch(Exception)
+            {
+                return false; 
+            }
         }
 
-        public async Task DeleteClubAsync(int id)
+        public async Task<bool> DeleteClubAsync(int id)
         {
-            _logger.LogInformation("Deleting club with ID: {ClubId}", id);
             var clubToDelete = await _clubRepository.GetByIdAsync(id);
             if (clubToDelete == null)
             {
-                 _logger.LogWarning("Club with ID: {ClubId} not found for deletion.", id);
-                 throw new KeyNotFoundException($"Club with ID {id} not found");
+                 return false; 
             }
-
-            await _clubRepository.DeleteByIdAsync(id);
-
-            await _unitOfWork.SaveAsync();
-            _logger.LogInformation("Club with ID: {ClubId} deleted successfully.", id);
+            _clubRepository.Delete(clubToDelete); 
+            try
+            {
+                await _unitOfWork.SaveAsync();
+                return true; 
+            }
+            catch(Exception)
+            {
+                 return false; 
+            }
         }
     }
 }

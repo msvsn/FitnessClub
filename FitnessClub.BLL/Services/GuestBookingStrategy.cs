@@ -13,7 +13,7 @@ namespace FitnessClub.BLL.Services
         {
             if (string.IsNullOrWhiteSpace(guestName))
             {
-                throw new ArgumentException("Guest name cannot be empty for guest bookings.", nameof(guestName));
+                throw new ArgumentException("Ім'я гостя не може бути порожнім", nameof(guestName));
             }
 
             return new Booking

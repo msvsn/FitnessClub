@@ -13,7 +13,7 @@ namespace FitnessClub.BLL.Services
         {
             if (!userId.HasValue)
             {
-                throw new ArgumentException("User ID must be provided for membership bookings.", nameof(userId));
+                throw new ArgumentException("ID користувача не може бути порожнім", nameof(userId));
             }
 
             return new Booking
