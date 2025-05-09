@@ -7,9 +7,9 @@ namespace FitnessClub.BLL.Services
     public class MembershipBookingStrategy : IBookingStrategy
     {
 
-        public bool CanBook(int? userId, string? guestName, int clubId, DateTime classDate) =>
+        public virtual bool CanBook(int? userId, string? guestName, int clubId, DateTime classDate) =>
             userId.HasValue;
-        public Booking CreateBooking(int? userId, string? guestName, int classScheduleId, DateTime classDate)
+        public virtual Booking CreateBooking(int? userId, string? guestName, int classScheduleId, DateTime classDate)
         {
             if (!userId.HasValue)
             {
