@@ -8,14 +8,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using FitnessClub.BLL;
 using FitnessClub.Entities;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
 builder.Services.AddControllersWithViews();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FitnessClubContext>(options =>
     options.UseSqlite(connectionString));
-
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 try
 {
@@ -23,18 +26,22 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Error registering AutoMapper: {ex.Message}");
+    Console.WriteLine($"Помилка реєстрації AutoMapper: {ex.Message}");
     throw;
 }
 
-builder.Services.AddScoped<IClubService, ClubService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITrainerService, TrainerService>();
-builder.Services.AddScoped<IMembershipService, MembershipService>();
-builder.Services.AddScoped<IClassScheduleService, ClassScheduleService>();
-builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddScoped<IBookingStrategy, MembershipBookingStrategy>();
-builder.Services.AddScoped<IBookingStrategy, GuestBookingStrategy>();
+builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
+{
+    containerBuilder.RegisterType<UnitOfWork>().As<IUnitOfWork>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<ClubService>().As<IClubService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<UserService>().As<IUserService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<TrainerService>().As<ITrainerService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<MembershipService>().As<IMembershipService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<ClassScheduleService>().As<IClassScheduleService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<BookingService>().As<IBookingService>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<MembershipBookingStrategy>().As<IBookingStrategy>().InstancePerLifetimeScope();
+    containerBuilder.RegisterType<GuestBookingStrategy>().As<IBookingStrategy>().InstancePerLifetimeScope();
+});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -78,7 +85,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Critical error during database initialization: {ex.Message}");
+        Console.WriteLine($"Критична помилка під час ініціалізації бази даних: {ex.Message}");
         throw;
     }
 }
@@ -89,7 +96,7 @@ try
 }
 catch(Exception ex)
 {
-    Console.WriteLine($"Critical error during AppSettings initialization: {ex.Message}");
+    Console.WriteLine($"Критична помилка під час ініціалізації AppSettings: {ex.Message}");
     throw;
 }
 
