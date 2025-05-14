@@ -155,7 +155,7 @@ namespace FitnessClub.BLL.Services
         private async Task<IEnumerable<Membership>> GetActiveNetworkMembershipEntitiesAsync(int userId)
         {
             var now = DateTime.UtcNow;
-            return await _membershipRepository.FindAsync(
+            var memberships = await _membershipRepository.FindAsync(
                 m => m.UserId == userId &&
                      m.StartDate <= now &&
                      m.EndDate >= now &&
@@ -165,6 +165,7 @@ namespace FitnessClub.BLL.Services
                     m => m.MembershipType 
                 }
             );
+            return memberships ?? Enumerable.Empty<Membership>();
         }
 
         private async Task<Membership?> GetActiveSingleVisitMembershipEntityAsync(int userId)
@@ -198,6 +199,42 @@ namespace FitnessClub.BLL.Services
             var sortedMemberships = memberships.OrderByDescending(m => m.EndDate);
             
             return _mapper.Map<IEnumerable<MembershipDto>>(sortedMemberships);
+        }
+
+        public async Task<MembershipTypeDto?> GetMembershipTypeByIdAsync(int id)
+        {
+            var membershipType = await _membershipTypeRepository.GetByIdAsync(id);
+            return _mapper.Map<MembershipTypeDto>(membershipType);
+        }
+
+        public async Task<MembershipTypeDto?> CreateMembershipTypeAsync(MembershipTypeDto membershipTypeDto)
+        {
+            if (membershipTypeDto == null) throw new ArgumentNullException(nameof(membershipTypeDto));
+            var membershipType = _mapper.Map<MembershipType>(membershipTypeDto);
+            await _membershipTypeRepository.AddAsync(membershipType);
+            await _unitOfWork.SaveAsync();
+            return _mapper.Map<MembershipTypeDto>(membershipType);
+        }
+
+        public async Task<bool> UpdateMembershipTypeAsync(int id, MembershipTypeDto membershipTypeDto)
+        {
+            if (membershipTypeDto == null) throw new ArgumentNullException(nameof(membershipTypeDto));
+            if (id != membershipTypeDto.MembershipTypeId) return false;
+            var existingType = await _membershipTypeRepository.GetByIdAsync(id);
+            if (existingType == null) return false;
+            _mapper.Map(membershipTypeDto, existingType);
+            _membershipTypeRepository.Update(existingType);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteMembershipTypeAsync(int id)
+        {
+            var membershipType = await _membershipTypeRepository.GetByIdAsync(id);
+            if (membershipType == null) return false;
+            _membershipTypeRepository.Delete(membershipType);
+            await _unitOfWork.SaveAsync();
+            return true;
         }
     }
 }

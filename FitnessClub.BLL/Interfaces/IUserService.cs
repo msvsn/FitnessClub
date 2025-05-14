@@ -10,5 +10,9 @@ namespace FitnessClub.BLL.Interfaces
         Task<UserDto?> LoginAsync(string username, string password);
         Task<UserDto?> GetUserByIdAsync(int id);
         Task<bool> HasValidMembershipForClubAsync(int userId, int clubId, DateTime date);
+        Task<IEnumerable<UserDto>> GetAllUsersAsync();
+        Task<UserDto?> CreateUserAsync(UserDto userDto);
+        Task<bool> UpdateUserAsync(int id, UserDto userDto);
+        Task<bool> DeleteUserAsync(int id);
     }
 }

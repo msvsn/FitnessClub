@@ -10,11 +10,9 @@ namespace FitnessClub.BLL.AutoMapping
         {
             CreateMap<User, UserDto>();
             CreateMap<UserDto, User>();
-            CreateMap<Club, ClubDto>()
-                .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.Address));
+            CreateMap<Club, ClubDto>();
             CreateMap<ClubDto, Club>();
-            CreateMap<Trainer, TrainerDto>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"));
+            CreateMap<Trainer, TrainerDto>();
             CreateMap<TrainerDto, Trainer>();
             CreateMap<MembershipType, MembershipTypeDto>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
@@ -31,12 +29,18 @@ namespace FitnessClub.BLL.AutoMapping
             CreateMap<ClassSchedule, ClassScheduleDto>()
                 .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => src.Club.Name))
                 .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => $"{src.Trainer.FirstName} {src.Trainer.LastName}"));
+            CreateMap<ClassScheduleDto, ClassSchedule>()
+                .ForMember(dest => dest.BookedPlaces, opt => opt.MapFrom(src => 0))
+                .ForMember(dest => dest.Club, opt => opt.Ignore())
+                .ForMember(dest => dest.Trainer, opt => opt.Ignore())
+                .ForMember(dest => dest.Bookings, opt => opt.Ignore());
             CreateMap<Booking, BookingDto>()
-                .ForMember(dest => dest.ClassType, opt => opt.MapFrom(src => src.ClassSchedule.ClassType))
-                .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => src.ClassSchedule.Club.Name))
-                .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => $"{src.ClassSchedule.Trainer.FirstName} {src.ClassSchedule.Trainer.LastName}"))
-                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.ClassSchedule.StartTime))
-                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.ClassSchedule.EndTime));
+                .ForMember(dest => dest.GuestName, opt => opt.MapFrom(src => src.GuestName))
+                .ForMember(dest => dest.ClassType, opt => opt.MapFrom(src => src.ClassSchedule != null ? src.ClassSchedule.ClassType : null))
+                .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => src.ClassSchedule != null && src.ClassSchedule.Club != null ? src.ClassSchedule.Club.Name : null))
+                .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => src.ClassSchedule != null && src.ClassSchedule.Trainer != null ? $"{src.ClassSchedule.Trainer.FirstName} {src.ClassSchedule.Trainer.LastName}" : null))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.ClassSchedule != null ? src.ClassSchedule.StartTime : default(TimeSpan)))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.ClassSchedule != null ? src.ClassSchedule.EndTime : default(TimeSpan)));
         }
     }
 }

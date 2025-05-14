@@ -10,6 +10,7 @@ using FitnessClub.Core.Abstractions;
 using FitnessClub.Entities;
 using Microsoft.EntityFrameworkCore;
 using FitnessClub.BLL.Enums;
+using Microsoft.Extensions.Options;
 
 namespace FitnessClub.BLL.Services
 {
@@ -235,6 +236,42 @@ namespace FitnessClub.BLL.Services
             var sortedBookings = bookings.OrderByDescending(b => b.ClassDate);
 
             return _mapper.Map<List<BookingDto>>(sortedBookings);
+        }
+
+        public async Task<IEnumerable<BookingDto>> GetAllBookingsAsync()
+        {
+            var query = _bookingRepository.Query()
+                .Include(b => b.ClassSchedule)
+                    .ThenInclude(cs => cs.Club)
+                .Include(b => b.ClassSchedule)
+                    .ThenInclude(cs => cs.Trainer)
+                .Include(b => b.User);
+            var orderedQuery = query.OrderByDescending(b => b.ClassDate).ThenByDescending(b => b.BookingId);
+            var bookings = await orderedQuery.ToListAsync();
+            return _mapper.Map<IEnumerable<BookingDto>>(bookings);
+        }
+
+        public async Task<BookingDto?> GetBookingByIdAsync(int id)
+        {
+            var bookings = await _bookingRepository.FindAsync(b => b.BookingId == id,
+                b => b.ClassSchedule.Club, 
+                b => b.ClassSchedule.Trainer,
+                b => b.ClassSchedule,
+                b => b.User);
+            var booking = bookings.FirstOrDefault();
+            return _mapper.Map<BookingDto>(booking);
+        }
+
+        public async Task<bool> UpdateBookingAsync(int id, BookingDto bookingDto)
+        {
+            if (bookingDto == null) throw new ArgumentNullException(nameof(bookingDto));
+            if (id != bookingDto.BookingId) return false;
+            var existingBooking = await _bookingRepository.GetByIdAsync(id);
+            if (existingBooking == null) return false;
+            _mapper.Map(bookingDto, existingBooking);
+            _bookingRepository.Update(existingBooking);
+            await _unitOfWork.SaveAsync();
+            return true;
         }
     }
 }
