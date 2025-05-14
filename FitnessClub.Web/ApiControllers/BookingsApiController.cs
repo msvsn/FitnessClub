@@ -9,14 +9,6 @@ using System.Security.Claims;
 
 namespace FitnessClub.Web.ApiControllers
 {
-    public class CreateBookingRequestDto
-    {
-        public int? UserId { get; set; }
-        public string? GuestName { get; set; }
-        public int ClassScheduleId { get; set; }
-        public DateTime ClassDate { get; set; }
-    }
-
     [Route("api/[controller]")]
     [ApiController]
     public class BookingsApiController : ControllerBase
@@ -117,7 +109,6 @@ namespace FitnessClub.Web.ApiControllers
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserIdStr) || !int.TryParse(currentUserIdStr, out int userIdForCancellation))
             {
-
                 return Unauthorized("Не вдалося визначити ID користувача для скасування бронювання.");
             }
 
