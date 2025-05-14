@@ -46,7 +46,7 @@ namespace FitnessClub.Web.Controllers
                         await SignInUser(userDto);
                         return RedirectToAction("Index", "Home");
                     }
-                    ModelState.AddModelError(string.Empty, "Registration successful, but failed to log in automatically.");
+                    ModelState.AddModelError(string.Empty, "Реєстрація пройшла успішно, але автоматичний вхід не вдався.");
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -58,7 +58,7 @@ namespace FitnessClub.Web.Controllers
                 }
                 catch (Exception)
                 {
-                    ModelState.AddModelError(string.Empty, "An unexpected error occurred during registration.");
+                    ModelState.AddModelError(string.Empty, "Виникла невідома помилка при реєстрації.");
                 }
             }
             return View(model);
@@ -81,7 +81,7 @@ namespace FitnessClub.Web.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Неправильна спроба входу.");
                 }
             }
             return View(model);

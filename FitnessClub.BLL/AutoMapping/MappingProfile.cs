@@ -41,6 +41,12 @@ namespace FitnessClub.BLL.AutoMapping
                 .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => src.ClassSchedule != null && src.ClassSchedule.Trainer != null ? $"{src.ClassSchedule.Trainer.FirstName} {src.ClassSchedule.Trainer.LastName}" : null))
                 .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.ClassSchedule != null ? src.ClassSchedule.StartTime : default(TimeSpan)))
                 .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.ClassSchedule != null ? src.ClassSchedule.EndTime : default(TimeSpan)));
+            CreateMap<BookingDto, Booking>()
+                .ForMember(dest => dest.BookingId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.ClassSchedule, opt => opt.Ignore())
+                .ForMember(dest => dest.ClassDate, opt => opt.Ignore())
+                .ForMember(dest => dest.BookingDate, opt => opt.Ignore());
         }
     }
 }

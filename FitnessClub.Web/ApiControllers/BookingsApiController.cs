@@ -104,6 +104,7 @@ namespace FitnessClub.Web.ApiControllers
 
         // DELETE: api/BookingsApi/5
         [HttpDelete("{id}")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> DeleteBooking(int id)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

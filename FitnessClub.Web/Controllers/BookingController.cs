@@ -124,11 +124,11 @@ namespace FitnessClub.Web.Controllers
                 bool cancelled = await _bookingService.CancelBookingAsync(bookingId, userId.Value);
                 if (cancelled)
                 {
-                    TempData["SuccessMessage"] = "Booking cancelled successfully.";
+                    TempData["SuccessMessage"] = "Бронювання успішно скасовано.";
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to cancel booking. It might not exist, belong to you, or the class has already passed.";
+                    TempData["ErrorMessage"] = "Не вдалося скасувати бронювання. Воно може не існувати, належати вам або заняття вже відбулося.";
                 }
             }
             catch (Exception)
