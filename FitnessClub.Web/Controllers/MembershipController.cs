@@ -20,21 +20,18 @@ namespace FitnessClub.Web.Controllers
     {
         private readonly IMembershipService _membershipService;
         private readonly IClubService _clubService;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public MembershipController(IMembershipService membershipService, IClubService clubService, IUnitOfWork unitOfWork, IMapper mapper)
+        public MembershipController(IMembershipService membershipService, IClubService clubService, IMapper mapper)
         {
             _membershipService = membershipService;
             _clubService = clubService;
-            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
         {
-            var membershipTypes = await _unitOfWork.GetRepository<FitnessClub.Entities.MembershipType>().GetAllAsync();
-            var membershipTypeDtos = _mapper.Map<IEnumerable<MembershipTypeDto>>(membershipTypes);
+            var membershipTypeDtos = await _membershipService.GetAllMembershipTypesAsync();
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             MembershipDto? activeMembership = null; 
